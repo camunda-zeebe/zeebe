@@ -16,6 +16,7 @@ import io.zeebe.engine.processing.bpmn.behavior.BpmnStateBehavior;
 import io.zeebe.engine.processing.bpmn.behavior.BpmnStateTransitionBehavior;
 import io.zeebe.engine.processing.bpmn.behavior.BpmnVariableMappingBehavior;
 import io.zeebe.engine.processing.deployment.model.element.ExecutableFlowElementContainer;
+import io.zeebe.engine.processing.deployment.model.element.ExecutableStartEvent;
 import io.zeebe.protocol.record.intent.ProcessInstanceIntent;
 
 public final class SubProcessProcessor
@@ -41,60 +42,45 @@ public final class SubProcessProcessor
   }
 
   @Override
-  public void onActivating(
+  public void onActivate(
       final ExecutableFlowElementContainer element, final BpmnElementContext context) {
 
     variableMappingBehavior
         .applyInputMappings(context, element)
+        // todo not fully migrated because of message start events and
+        // workflowInstanceSubscriptionState
         .flatMap(ok -> eventSubscriptionBehavior.subscribeToEvents(element, context))
+        .map(ok -> stateTransitionBehavior.transitionToActivated(context))
         .ifRightOrLeft(
-            ok -> stateTransitionBehavior.transitionToActivated(context),
-            failure -> incidentBehavior.createIncident(failure, context));
-  }
+            activated -> {
+              final ExecutableStartEvent startEvent;
+              if (element.hasNoneStartEvent()) {
+                // embedded sub-process is activated
+                startEvent = element.getNoneStartEvent();
+              } else {
+                // event sub-process is activated
+                startEvent = element.getStartEvents().get(0);
+              }
 
-  @Override
-  public void onActivated(
-      final ExecutableFlowElementContainer element, final BpmnElementContext context) {
-
-    if (element.hasNoneStartEvent()) {
-      // embedded sub-process is activated
-      final var noneStartEvent = element.getNoneStartEvent();
-      stateTransitionBehavior.activateChildInstance(context, noneStartEvent);
-
-    } else {
-      // event sub-process is activated
-      final var startEvent = element.getStartEvents().get(0);
-      final var childInstanceKey =
-          stateTransitionBehavior.activateChildInstance(context, startEvent);
-
-      // the event variables are stored as temporary variables in the scope of the subprocess
-      // - move them to the scope of the start event to apply the output variable mappings
-      stateBehavior.transferTemporaryVariables(context, childInstanceKey);
-    }
-  }
-
-  @Override
-  public void onCompleting(
-      final ExecutableFlowElementContainer element, final BpmnElementContext context) {
-
-    variableMappingBehavior
-        .applyOutputMappings(context, element)
-        .ifRightOrLeft(
-            ok -> {
-              eventSubscriptionBehavior.unsubscribeFromEvents(context);
-              stateTransitionBehavior.transitionToCompleted(context);
+              stateTransitionBehavior.activateChildInstance(activated, startEvent);
             },
             failure -> incidentBehavior.createIncident(failure, context));
   }
 
   @Override
-  public void onCompleted(
+  public void onComplete(
       final ExecutableFlowElementContainer element, final BpmnElementContext context) {
-
-    stateTransitionBehavior.takeOutgoingSequenceFlows(element, context);
-
-    stateBehavior.consumeToken(context);
-    stateBehavior.removeElementInstance(context);
+    variableMappingBehavior
+        .applyOutputMappings(context, element)
+        .map(
+            ok -> {
+              // todo wait for phil message migration
+              eventSubscriptionBehavior.unsubscribeFromEvents(context);
+              return stateTransitionBehavior.transitionToCompleted(context);
+            })
+        .ifRightOrLeft(
+            completed -> stateTransitionBehavior.takeOutgoingSequenceFlows(element, completed),
+            failure -> incidentBehavior.createIncident(failure, context));
   }
 
   @Override

@@ -289,6 +289,7 @@ public final class BpmnStateTransitionBehavior {
     if (outgoingSequenceFlows.isEmpty()) {
       // behaves like an implicit end event
 
+      // todo(zell): needs to be migrated for Call Activity, Sub Process and Multi instance!
       onElementCompleted(element, context);
 
     } else {

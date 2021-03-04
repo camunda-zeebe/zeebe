@@ -46,6 +46,7 @@ final class ProcessInstanceElementActivatedApplier
     // event applier.
     // todo: we need to remove it later
     elementInstanceState.removeStoredRecord(value.getFlowScopeKey(), key, Purpose.FAILED);
+
     if (value.getBpmnElementType() == BpmnElementType.SUB_PROCESS) {
 
       final var executableFlowElementContainer =
