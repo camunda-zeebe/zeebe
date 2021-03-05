@@ -41,13 +41,11 @@ import io.atomix.raft.protocol.TestRaftServerProtocol;
 import io.atomix.raft.roles.LeaderRole;
 import io.atomix.raft.snapshot.TestSnapshotStore;
 import io.atomix.raft.storage.RaftStorage;
-import io.atomix.raft.storage.log.Indexed;
+import io.atomix.raft.storage.log.IndexedRaftRecord;
 import io.atomix.raft.storage.log.RaftLog;
 import io.atomix.raft.storage.log.RaftLogReader;
 import io.atomix.raft.storage.log.RaftLogReader.Mode;
-import io.atomix.raft.storage.log.entry.InitializeEntry;
 import io.atomix.raft.storage.log.entry.RaftLogEntry;
-import io.atomix.raft.zeebe.ZeebeEntry;
 import io.atomix.raft.zeebe.ZeebeLogAppender;
 import io.atomix.utils.concurrent.SingleThreadContext;
 import io.atomix.utils.concurrent.ThreadContext;
@@ -375,7 +373,8 @@ public class RaftTest extends ConcurrentTestCase {
       final RaftLogReader raftLogReader = raftLog.openReader(0, Mode.COMMITS);
       raftLogReader.reset(raftLog.getLastIndex());
       final RaftLogEntry entry = raftLogReader.next().entry();
-      assert (entry instanceof InitializeEntry);
+
+      assertTrue(entry.isApplicationEntry());
       assertEquals(term, entry.term());
       transitionCompleted.countDown();
     }
@@ -592,12 +591,12 @@ public class RaftTest extends ConcurrentTestCase {
     }
 
     @Override
-    public void onCommit(final Indexed<ZeebeEntry> indexed) {
+    public void onCommit(final IndexedRaftRecord indexed) {
       commitFuture.complete(indexed.index());
     }
 
     @Override
-    public void onCommitError(final Indexed<ZeebeEntry> indexed, final Throwable error) {
+    public void onCommitError(final IndexedRaftRecord indexed, final Throwable error) {
       fail("Unexpected write error: " + error.getMessage());
     }
 

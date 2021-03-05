@@ -17,7 +17,7 @@ package io.atomix.raft;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import io.atomix.raft.storage.log.Indexed;
+import io.atomix.raft.storage.log.IndexedRaftRecord;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -76,7 +76,7 @@ public class RaftAppendTest {
     final var maxIndex =
         memberLog.values().stream()
             .flatMap(Collection::stream)
-            .map(Indexed::index)
+            .map(IndexedRaftRecord::index)
             .max(Long::compareTo)
             .orElseThrow();
     assertThat(maxIndex).isEqualTo(lastIndex);
@@ -84,7 +84,7 @@ public class RaftAppendTest {
     assertMemberLogs(memberLog);
   }
 
-  private void assertMemberLogs(final Map<String, List<Indexed<?>>> memberLog) {
+  private void assertMemberLogs(final Map<String, List<IndexedRaftRecord>> memberLog) {
     final var firstMemberEntries = memberLog.get("1");
     final var members = memberLog.keySet();
     for (final var member : members) {
@@ -93,7 +93,7 @@ public class RaftAppendTest {
 
         assertThat(otherEntries)
             .describedAs("Entry comparison 1 vs " + member)
-            .containsExactly(firstMemberEntries.toArray(new Indexed[0]));
+            .containsExactly(firstMemberEntries.toArray(new IndexedRaftRecord[0]));
       }
     }
   }

@@ -17,8 +17,9 @@ import static org.mockito.Mockito.timeout;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import io.atomix.raft.storage.log.Indexed;
-import io.atomix.raft.zeebe.ZeebeEntry;
+import io.atomix.raft.storage.log.IndexedRaftRecord;
+import io.atomix.raft.storage.log.entry.ApplicationEntry;
+import io.atomix.raft.storage.log.entry.RaftLogEntry;
 import io.zeebe.broker.system.partitions.impl.AsyncSnapshotDirector;
 import io.zeebe.broker.system.partitions.impl.NoneSnapshotReplication;
 import io.zeebe.broker.system.partitions.impl.StateControllerImpl;
@@ -82,11 +83,8 @@ public final class AsyncSnapshotingTest {
             new NoneSnapshotReplication(),
             l ->
                 Optional.of(
-                    new Indexed(
-                        l + 100,
-                        new ZeebeEntry(1, System.currentTimeMillis(), 1, 10, null),
-                        0,
-                        -1)),
+                    new IndexedRaftRecord(
+                        l + 100, new RaftLogEntry(1, new ApplicationEntry(1, 10, null)), 0, -1)),
             db -> Long.MAX_VALUE);
 
     snapshotController.openDb();

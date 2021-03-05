@@ -29,12 +29,12 @@ import io.atomix.raft.RaftServer.Role;
 import io.atomix.raft.impl.RaftContext;
 import io.atomix.raft.metrics.RaftReplicationMetrics;
 import io.atomix.raft.storage.RaftStorage;
-import io.atomix.raft.storage.log.Indexed;
+import io.atomix.raft.storage.log.IndexedRaftRecord;
 import io.atomix.raft.storage.log.RaftLog;
 import io.atomix.raft.storage.log.RaftLogReader;
+import io.atomix.raft.storage.log.entry.ApplicationEntry;
 import io.atomix.raft.storage.log.entry.RaftLogEntry;
 import io.atomix.raft.zeebe.ValidationResult;
-import io.atomix.raft.zeebe.ZeebeEntry;
 import io.atomix.raft.zeebe.ZeebeLogAppender.AppendListener;
 import io.atomix.raft.zeebe.util.TestAppender;
 import io.atomix.storage.StorageException;
@@ -73,11 +73,11 @@ public class LeaderRoleTest {
 
     log = mock(RaftLog.class);
     when(log.getLastIndex()).thenReturn(1L);
-    when(log.append(any(ZeebeEntry.class)))
+    when(log.append(any(RaftLogEntry.class)))
         .then(
             i -> {
-              final ZeebeEntry zeebeEntry = i.getArgument(0);
-              return new Indexed<>(1, zeebeEntry, 45, -1);
+              final ApplicationEntry applicationEntry = i.getArgument(0);
+              return new IndexedRaftRecord(1, new RaftLogEntry(1, applicationEntry), 45, -1);
             });
     when(context.getLog()).thenReturn(log);
 
@@ -103,7 +103,7 @@ public class LeaderRoleTest {
     final AppendListener listener =
         new AppendListener() {
           @Override
-          public void onWrite(final Indexed<ZeebeEntry> indexed) {
+          public void onWrite(final IndexedRaftRecord indexed) {
             latch.countDown();
           }
         };
@@ -119,13 +119,13 @@ public class LeaderRoleTest {
   @Test
   public void shouldRetryAppendEntryOnIOException() throws InterruptedException {
     // given
-    when(log.append(any(ZeebeEntry.class)))
+    when(log.append(any(RaftLogEntry.class)))
         .thenThrow(new StorageException(new IOException()))
         .thenThrow(new StorageException(new IOException()))
         .then(
             i -> {
-              final ZeebeEntry zeebeEntry = i.getArgument(0);
-              return new Indexed<>(1, zeebeEntry, 45, -1);
+              final ApplicationEntry applicationEntry = i.getArgument(0);
+              return new IndexedRaftRecord(1, new RaftLogEntry(1, applicationEntry), 45, -1);
             });
 
     final ByteBuffer data = ByteBuffer.allocate(Integer.BYTES).putInt(0, 1);
@@ -133,7 +133,7 @@ public class LeaderRoleTest {
     final AppendListener listener =
         new AppendListener() {
           @Override
-          public void onWrite(final Indexed<ZeebeEntry> indexed) {
+          public void onWrite(final IndexedRaftRecord indexed) {
             latch.countDown();
           }
         };
@@ -149,7 +149,7 @@ public class LeaderRoleTest {
   @Test
   public void shouldStopRetryAppendEntryAfterMaxRetries() throws InterruptedException {
     // given
-    when(log.append(any(ZeebeEntry.class))).thenThrow(new StorageException(new IOException()));
+    when(log.append(any(RaftLogEntry.class))).thenThrow(new StorageException(new IOException()));
 
     final AtomicReference<Throwable> caughtError = new AtomicReference<>();
     final ByteBuffer data = ByteBuffer.allocate(Integer.BYTES).putInt(0, 1);
@@ -176,7 +176,7 @@ public class LeaderRoleTest {
   @Test
   public void shouldStopAppendEntryOnOutOfDisk() throws InterruptedException {
     // given
-    when(log.append(any(ZeebeEntry.class)))
+    when(log.append(any(RaftLogEntry.class)))
         .thenThrow(new StorageException.OutOfDiskSpace("Boom file out"));
 
     final AtomicReference<Throwable> caughtError = new AtomicReference<>();
@@ -205,7 +205,7 @@ public class LeaderRoleTest {
   @Test
   public void shouldStopAppendEntryOnToLargeEntry() throws InterruptedException {
     // given
-    when(log.append(any(ZeebeEntry.class)))
+    when(log.append(any(RaftLogEntry.class)))
         .thenThrow(new StorageException.TooLarge("Too large entry"));
 
     final AtomicReference<Throwable> caughtError = new AtomicReference<>();
@@ -233,7 +233,7 @@ public class LeaderRoleTest {
   @Test
   public void shouldTransitionToFollowerWhenAppendEntryException() throws InterruptedException {
     // given
-    when(log.append(any(ZeebeEntry.class))).thenThrow(new RuntimeException("expected"));
+    when(log.append(any(RaftLogEntry.class))).thenThrow(new RuntimeException("expected"));
 
     final AtomicReference<Throwable> caughtError = new AtomicReference<>();
     final ByteBuffer data = ByteBuffer.allocate(Integer.BYTES).putInt(0, 1);
@@ -261,7 +261,7 @@ public class LeaderRoleTest {
   @Test
   public void shouldNotAppendFollowingEntryOnException() throws InterruptedException {
     // given
-    when(log.append(any(ZeebeEntry.class))).thenThrow(new RuntimeException("expected"));
+    when(log.append(any(RaftLogEntry.class))).thenThrow(new RuntimeException("expected"));
 
     final AtomicReference<Throwable> caughtError = new AtomicReference<>();
     final ByteBuffer data = ByteBuffer.allocate(Integer.BYTES).putInt(0, 1);
@@ -294,23 +294,23 @@ public class LeaderRoleTest {
   @Test
   public void shouldRetryAppendEntriesInOrder() throws InterruptedException {
     // given
-    when(log.append(any(ZeebeEntry.class)))
+    when(log.append(any(RaftLogEntry.class)))
         .thenThrow(new StorageException(new IOException()))
         .thenThrow(new StorageException(new IOException()))
         .then(
             i -> {
-              final ZeebeEntry zeebeEntry = i.getArgument(0);
-              return new Indexed<>(1, zeebeEntry, 45, -1);
+              final ApplicationEntry applicationEntry = i.getArgument(0);
+              return new IndexedRaftRecord(1, new RaftLogEntry(1, applicationEntry), 45, -1);
             });
 
     final ByteBuffer data = ByteBuffer.allocate(Integer.BYTES).putInt(0, 1);
-    final List<ZeebeEntry> entries = new CopyOnWriteArrayList<>();
+    final List<ApplicationEntry> entries = new CopyOnWriteArrayList<>();
     final CountDownLatch latch = new CountDownLatch(2);
     final AppendListener listener =
         new AppendListener() {
           @Override
-          public void onWrite(final Indexed<ZeebeEntry> indexed) {
-            entries.add(indexed.entry());
+          public void onWrite(final IndexedRaftRecord indexed) {
+            entries.add(indexed.entry().getApplicationEntry());
             latch.countDown();
           }
         };
@@ -331,11 +331,11 @@ public class LeaderRoleTest {
   @Test
   public void shouldDetectInconsistencyWithLastEntry() throws InterruptedException {
     // given
-    when(log.append(any(ZeebeEntry.class)))
+    when(log.append(any(RaftLogEntry.class)))
         .then(
             i -> {
-              final ZeebeEntry zeebeEntry = i.getArgument(0);
-              return new Indexed<>(1, zeebeEntry, 45, -1);
+              final ApplicationEntry applicationEntry = i.getArgument(0);
+              return new IndexedRaftRecord(1, new RaftLogEntry(1, applicationEntry), 45, -1);
             });
 
     final ByteBuffer data = ByteBuffer.allocate(Integer.BYTES).putInt(0, 1);

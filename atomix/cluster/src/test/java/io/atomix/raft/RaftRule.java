@@ -32,12 +32,11 @@ import io.atomix.raft.roles.LeaderRole;
 import io.atomix.raft.snapshot.InMemorySnapshot;
 import io.atomix.raft.snapshot.TestSnapshotStore;
 import io.atomix.raft.storage.RaftStorage;
-import io.atomix.raft.storage.log.Indexed;
+import io.atomix.raft.storage.log.IndexedRaftRecord;
 import io.atomix.raft.storage.log.RaftLogReader.Mode;
 import io.atomix.raft.storage.log.entry.RaftLogEntry;
 import io.atomix.raft.zeebe.EntryValidator;
 import io.atomix.raft.zeebe.NoopEntryValidator;
-import io.atomix.raft.zeebe.ZeebeEntry;
 import io.atomix.raft.zeebe.ZeebeLogAppender;
 import io.atomix.utils.AbstractIdentifier;
 import io.atomix.utils.concurrent.SingleThreadContext;
@@ -369,15 +368,15 @@ public final class RaftRule extends ExternalResource {
             });
   }
 
-  public Map<String, List<Indexed<?>>> getMemberLogs() {
+  public Map<String, List<IndexedRaftRecord>> getMemberLogs() {
 
-    final Map<String, List<Indexed<?>>> memberLogs = new HashMap<>();
+    final Map<String, List<IndexedRaftRecord>> memberLogs = new HashMap<>();
 
     for (final var server : servers.values()) {
       if (server.isRunning()) {
 
         final var log = server.getContext().getLog();
-        final List<Indexed<?>> entryList = new ArrayList<>();
+        final List<IndexedRaftRecord> entryList = new ArrayList<>();
         try (final var raftLogReader = log.openReader(1, Mode.ALL)) {
 
           while (raftLogReader.hasNext()) {
@@ -611,12 +610,12 @@ public final class RaftRule extends ExternalResource {
     }
 
     @Override
-    public void onCommit(final Indexed<ZeebeEntry> indexed) {
+    public void onCommit(final IndexedRaftRecord indexed) {
       commitFuture.complete(indexed.index());
     }
 
     @Override
-    public void onCommitError(final Indexed<ZeebeEntry> indexed, final Throwable error) {
+    public void onCommitError(final IndexedRaftRecord indexed, final Throwable error) {
       commitFuture.completeExceptionally(error);
     }
 

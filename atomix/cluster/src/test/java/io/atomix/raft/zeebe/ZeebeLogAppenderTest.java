@@ -19,7 +19,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
 import com.google.common.base.Stopwatch;
-import io.atomix.raft.storage.log.Indexed;
+import io.atomix.raft.storage.log.IndexedRaftRecord;
 import io.atomix.raft.zeebe.util.TestAppender;
 import io.atomix.raft.zeebe.util.ZeebeTestHelper;
 import io.atomix.raft.zeebe.util.ZeebeTestNode;
@@ -72,7 +72,7 @@ public class ZeebeLogAppenderTest {
     append();
 
     // then
-    final Indexed<ZeebeEntry> appended = appenderListener.pollWritten();
+    final IndexedRaftRecord appended = appenderListener.pollWritten();
     assertNotNull(appended);
     assertEquals(0, appenderListener.getErrors().size());
   }
@@ -83,7 +83,7 @@ public class ZeebeLogAppenderTest {
     append();
 
     // then
-    final Indexed<ZeebeEntry> appended = appenderListener.pollCommitted();
+    final IndexedRaftRecord appended = appenderListener.pollCommitted();
     assertNotNull(appended);
     assertEquals(0, appenderListener.getErrors().size());
   }

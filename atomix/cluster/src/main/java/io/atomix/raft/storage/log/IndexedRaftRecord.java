@@ -18,17 +18,19 @@ package io.atomix.raft.storage.log;
 
 import static com.google.common.base.MoreObjects.toStringHelper;
 
+import io.atomix.raft.storage.log.entry.RaftLogEntry;
 import java.util.Objects;
 
 /** Indexed journal entry. */
-public class Indexed<E> {
+public class IndexedRaftRecord {
 
   private final long index;
-  private final E entry;
+  private final RaftLogEntry entry;
   private final int size;
   private final long checksum;
 
-  public Indexed(final long index, final E entry, final int size, final long checksum) {
+  public IndexedRaftRecord(
+      final long index, final RaftLogEntry entry, final int size, final long checksum) {
     this.index = index;
     this.entry = entry;
     this.size = size;
@@ -49,7 +51,7 @@ public class Indexed<E> {
    *
    * @return The indexed entry.
    */
-  public E entry() {
+  public RaftLogEntry entry() {
     return entry;
   }
 
@@ -71,25 +73,6 @@ public class Indexed<E> {
     return checksum;
   }
 
-  /**
-   * Returns the entry type class.
-   *
-   * @return The entry class.
-   */
-  public Class<?> type() {
-    return entry.getClass();
-  }
-
-  /**
-   * Casts the entry to the given type.
-   *
-   * @return The cast entry.
-   */
-  @SuppressWarnings("unchecked")
-  public <E> Indexed<E> cast() {
-    return (Indexed<E>) this;
-  }
-
   @Override
   public int hashCode() {
     return Objects.hash(index, entry, size);
@@ -103,7 +86,7 @@ public class Indexed<E> {
     if (o == null || getClass() != o.getClass()) {
       return false;
     }
-    final Indexed<?> indexed = (Indexed<?>) o;
+    final IndexedRaftRecord indexed = (IndexedRaftRecord) o;
     return index == indexed.index
         && size == indexed.size
         && Objects.equals(entry, indexed.entry)

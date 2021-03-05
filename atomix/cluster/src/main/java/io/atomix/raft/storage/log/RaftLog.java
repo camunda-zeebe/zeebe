@@ -18,8 +18,8 @@ package io.atomix.raft.storage.log;
 
 import io.atomix.raft.partition.impl.RaftNamespaces;
 import io.atomix.raft.storage.log.RaftLogReader.Mode;
+import io.atomix.raft.storage.log.entry.ApplicationEntry;
 import io.atomix.raft.storage.log.entry.RaftLogEntry;
-import io.atomix.raft.zeebe.ZeebeEntry;
 import io.atomix.utils.serializer.Namespace;
 import io.zeebe.journal.Journal;
 import io.zeebe.journal.JournalRecord;
@@ -37,7 +37,7 @@ public class RaftLog implements Closeable {
   private final Namespace serializer;
   private final boolean flushExplicitly;
 
-  private Indexed<RaftLogEntry> lastAppendedEntry;
+  private IndexedRaftRecord lastAppendedEntry;
   private volatile long commitIndex;
 
   protected RaftLog(
@@ -112,7 +112,7 @@ public class RaftLog implements Closeable {
     return journal.getLastIndex();
   }
 
-  public Indexed<RaftLogEntry> getLastEntry() {
+  public IndexedRaftRecord getLastEntry() {
     if (lastAppendedEntry == null) {
       readLastEntry();
     }
@@ -133,23 +133,21 @@ public class RaftLog implements Closeable {
   }
 
   @SuppressWarnings("unchecked")
-  public <T extends RaftLogEntry> Indexed<T> append(final T entry) {
+  public IndexedRaftRecord append(final RaftLogEntry entry) {
     final byte[] serializedEntry = serializer.serialize(entry);
     final JournalRecord journalRecord;
 
-    if (entry instanceof ZeebeEntry) {
-      final ZeebeEntry asqnEntry = (ZeebeEntry) entry;
+    if (entry.isApplicationEntry()) {
+      final ApplicationEntry asqnEntry = entry.getApplicationEntry();
       journalRecord = journal.append(asqnEntry.lowestPosition(), new UnsafeBuffer(serializedEntry));
     } else {
       journalRecord = journal.append(new UnsafeBuffer(serializedEntry));
     }
 
-    final Indexed<T> writtenEntry =
-        new Indexed<>(
+    lastAppendedEntry =
+        new IndexedRaftRecord(
             journalRecord.index(), entry, serializedEntry.length, journalRecord.checksum());
-    lastAppendedEntry = (Indexed<RaftLogEntry>) writtenEntry;
-
-    return writtenEntry;
+    return lastAppendedEntry;
   }
 
   public void reset(final long index) {

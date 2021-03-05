@@ -15,6 +15,8 @@
  */
 package io.atomix.raft.zeebe;
 
+import io.atomix.raft.storage.log.entry.ApplicationEntry;
+
 @FunctionalInterface
 public interface EntryValidator {
 
@@ -27,5 +29,5 @@ public interface EntryValidator {
    * @param entry the zeebe entry to be appended
    * @return a ValidationResult containing the validation result and an error message, if it failed
    */
-  ValidationResult validateEntry(ZeebeEntry lastEntry, ZeebeEntry entry);
+  ValidationResult validateEntry(ApplicationEntry lastEntry, ApplicationEntry entry);
 }

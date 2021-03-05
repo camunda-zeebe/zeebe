@@ -20,9 +20,9 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
+import io.atomix.raft.storage.log.entry.ApplicationEntry;
 import io.atomix.raft.zeebe.EntryValidator;
 import io.atomix.raft.zeebe.ValidationResult;
-import io.atomix.raft.zeebe.ZeebeEntry;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BiFunction;
@@ -67,10 +67,11 @@ public class EntryValidationTest {
   }
 
   private static class TestEntryValidator implements EntryValidator {
-    BiFunction<ZeebeEntry, ZeebeEntry, ValidationResult> validation;
+    BiFunction<ApplicationEntry, ApplicationEntry, ValidationResult> validation;
 
     @Override
-    public ValidationResult validateEntry(final ZeebeEntry lastEntry, final ZeebeEntry entry) {
+    public ValidationResult validateEntry(
+        final ApplicationEntry lastEntry, final ApplicationEntry entry) {
       return validation.apply(lastEntry, entry);
     }
   }

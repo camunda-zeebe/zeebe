@@ -32,7 +32,7 @@ import io.atomix.raft.protocol.InstallResponse;
 import io.atomix.raft.protocol.RaftRequest;
 import io.atomix.raft.protocol.RaftResponse;
 import io.atomix.raft.snapshot.impl.SnapshotChunkImpl;
-import io.atomix.raft.storage.log.Indexed;
+import io.atomix.raft.storage.log.IndexedRaftRecord;
 import io.atomix.raft.storage.log.entry.RaftLogEntry;
 import io.atomix.utils.logging.ContextualLoggerFactory;
 import io.atomix.utils.logging.LoggerContext;
@@ -95,7 +95,7 @@ abstract class AbstractAppender implements AutoCloseable {
   protected AppendRequest buildAppendEmptyRequest(final RaftMemberContext member) {
     // Read the previous entry from the reader.
     // The reader can be null for RESERVE members.
-    final Indexed<RaftLogEntry> prevEntry = member.getCurrentEntry();
+    final IndexedRaftRecord prevEntry = member.getCurrentEntry();
 
     final DefaultRaftMember leader = raft.getLeader();
     return builderWithPreviousEntry(prevEntry)
@@ -107,7 +107,7 @@ abstract class AbstractAppender implements AutoCloseable {
         .build();
   }
 
-  private AppendRequest.Builder builderWithPreviousEntry(final Indexed<RaftLogEntry> prevEntry) {
+  private AppendRequest.Builder builderWithPreviousEntry(final IndexedRaftRecord prevEntry) {
     long prevIndex = 0;
     long prevTerm = 0;
 
@@ -127,7 +127,7 @@ abstract class AbstractAppender implements AutoCloseable {
   /** Builds a populated AppendEntries request. */
   protected AppendRequest buildAppendEntriesRequest(
       final RaftMemberContext member, final long lastIndex) {
-    final Indexed<RaftLogEntry> prevEntry = member.getCurrentEntry();
+    final IndexedRaftRecord prevEntry = member.getCurrentEntry();
 
     final DefaultRaftMember leader = raft.getLeader();
     final AppendRequest.Builder builder =
@@ -151,7 +151,7 @@ abstract class AbstractAppender implements AutoCloseable {
     // Iterate through the log until the last index or the end of the log is reached.
     while (member.hasNextEntry()) {
       // Otherwise, read the next entry and add it to the batch.
-      final Indexed<RaftLogEntry> entry = member.nextEntry();
+      final IndexedRaftRecord entry = member.nextEntry();
       entries.add(entry.entry());
       checksums.add(entry.checksum());
       size += entry.size();

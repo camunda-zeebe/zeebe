@@ -24,7 +24,7 @@ import java.util.NoSuchElementException;
 import org.agrona.DirectBuffer;
 
 /** Raft log reader. */
-public class RaftLogReader implements java.util.Iterator<Indexed<RaftLogEntry>>, AutoCloseable {
+public class RaftLogReader implements java.util.Iterator<IndexedRaftRecord>, AutoCloseable {
   private final RaftLog log;
   private final JournalReader journalReader;
   private final RaftLogReader.Mode mode;
@@ -48,7 +48,7 @@ public class RaftLogReader implements java.util.Iterator<Indexed<RaftLogEntry>>,
   }
 
   @Override
-  public Indexed<RaftLogEntry> next() {
+  public IndexedRaftRecord next() {
     if (!hasNext()) {
       throw new NoSuchElementException();
     }
@@ -57,7 +57,7 @@ public class RaftLogReader implements java.util.Iterator<Indexed<RaftLogEntry>>,
     final RaftLogEntry entry = deserialize(journalRecord.data());
 
     nextIndex = journalRecord.index() + 1;
-    return new Indexed<>(
+    return new IndexedRaftRecord(
         journalRecord.index(), entry, journalRecord.data().capacity(), journalRecord.checksum());
   }
 

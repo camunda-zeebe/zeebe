@@ -24,7 +24,7 @@ import static org.junit.Assume.assumeTrue;
 import com.google.common.base.Stopwatch;
 import io.atomix.raft.RaftCommitListener;
 import io.atomix.raft.partition.impl.RaftPartitionServer;
-import io.atomix.raft.storage.log.Indexed;
+import io.atomix.raft.storage.log.IndexedRaftRecord;
 import io.atomix.raft.storage.log.entry.RaftLogEntry;
 import io.atomix.raft.zeebe.util.TestAppender;
 import io.atomix.raft.zeebe.util.ZeebeTestHelper;
@@ -128,7 +128,7 @@ public class ZeebeTest {
     final ZeebeLogAppender appender = helper.awaitLeaderAppender(partitionId);
 
     // when
-    final Indexed<ZeebeEntry> appended = appenderWrapper.append(appender, 0, 0, getIntAsBytes(0));
+    final IndexedRaftRecord appended = appenderWrapper.append(appender, 0, 0, getIntAsBytes(0));
 
     // then
     helper.awaitAllContain(partitionId, appended);
@@ -142,7 +142,7 @@ public class ZeebeTest {
     final ZeebeLogAppender appender = helper.awaitLeaderAppender(partitionId);
 
     // when
-    final Indexed<ZeebeEntry> firstAppended =
+    final IndexedRaftRecord firstAppended =
         appenderWrapper.append(appender, 0L, 0L, getIntAsBytes(0));
     for (int i = 1; i < ENTRIES_PER_SEGMENT; i++) {
       helper.awaitAllContain(partitionId, appenderWrapper.append(appender, i, i, getIntAsBytes(i)));
@@ -161,8 +161,8 @@ public class ZeebeTest {
     final ZeebeLogAppender appender = helper.awaitLeaderAppender(partitionId);
 
     // when
-    Indexed<ZeebeEntry> appended = appenderWrapper.append(appender, 0L, 0L, getIntAsBytes(0));
-    final Indexed<ZeebeEntry> firstAppended = appended;
+    IndexedRaftRecord appended = appenderWrapper.append(appender, 0L, 0L, getIntAsBytes(0));
+    final IndexedRaftRecord firstAppended = appended;
     for (int i = 1; i < ENTRIES_PER_SEGMENT; i++) {
       appended = appenderWrapper.append(appender, i, i, getIntAsBytes(i));
       helper.awaitAllContain(partitionId, appended);
@@ -206,7 +206,7 @@ public class ZeebeTest {
     final ZeebeLogAppender appender = helper.awaitLeaderAppender(partitionId);
     final List<ZeebeTestNode> followers =
         nodes.stream().filter(node -> !node.equals(leader)).collect(Collectors.toList());
-    final List<Indexed<ZeebeEntry>> entries = new ArrayList<>();
+    final List<IndexedRaftRecord> entries = new ArrayList<>();
 
     // when
     for (int i = 0; i < followers.size(); i++) {
@@ -221,7 +221,7 @@ public class ZeebeTest {
     }
 
     // then
-    for (final Indexed<ZeebeEntry> entry : entries) {
+    for (final IndexedRaftRecord entry : entries) {
       helper.awaitAllContain(partitionId, entry);
     }
   }
@@ -244,7 +244,7 @@ public class ZeebeTest {
 
     // when - then
     for (int i = 0; i < 5; i++) {
-      final Indexed<ZeebeEntry> entry = appenderWrapper.append(appender, i, i, getIntAsBytes(i));
+      final IndexedRaftRecord entry = appenderWrapper.append(appender, i, i, getIntAsBytes(i));
       final int expectedCount = i + 1;
       helper.awaitAllContains(nodes, partitionId, entry);
 

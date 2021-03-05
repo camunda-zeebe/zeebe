@@ -18,9 +18,9 @@ package io.atomix.raft;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import io.atomix.raft.storage.log.entry.ApplicationEntry;
 import io.atomix.raft.zeebe.EntryValidator;
 import io.atomix.raft.zeebe.ValidationResult;
-import io.atomix.raft.zeebe.ZeebeEntry;
 import java.util.List;
 import java.util.function.BiFunction;
 import org.junit.Rule;
@@ -64,10 +64,11 @@ public class SingleRaftEntryValidationTest {
   }
 
   private static class TestEntryValidator implements EntryValidator {
-    BiFunction<ZeebeEntry, ZeebeEntry, ValidationResult> validation;
+    BiFunction<ApplicationEntry, ApplicationEntry, ValidationResult> validation;
 
     @Override
-    public ValidationResult validateEntry(final ZeebeEntry lastEntry, final ZeebeEntry entry) {
+    public ValidationResult validateEntry(
+        final ApplicationEntry lastEntry, final ApplicationEntry entry) {
       return validation.apply(lastEntry, entry);
     }
   }

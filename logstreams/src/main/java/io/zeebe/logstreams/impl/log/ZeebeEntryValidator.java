@@ -7,14 +7,15 @@
  */
 package io.zeebe.logstreams.impl.log;
 
+import io.atomix.raft.storage.log.entry.ApplicationEntry;
 import io.atomix.raft.zeebe.EntryValidator;
 import io.atomix.raft.zeebe.ValidationResult;
-import io.atomix.raft.zeebe.ZeebeEntry;
 import org.agrona.concurrent.UnsafeBuffer;
 
 public class ZeebeEntryValidator implements EntryValidator {
   @Override
-  public ValidationResult validateEntry(final ZeebeEntry lastEntry, final ZeebeEntry entry) {
+  public ValidationResult validateEntry(
+      final ApplicationEntry lastEntry, final ApplicationEntry entry) {
     final UnsafeBuffer reader = new UnsafeBuffer(entry.data());
     long lastPosition = lastEntry != null ? lastEntry.highestPosition() : -1;
     int offset = 0;

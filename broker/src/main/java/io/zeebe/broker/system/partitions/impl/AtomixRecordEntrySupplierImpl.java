@@ -7,9 +7,8 @@
  */
 package io.zeebe.broker.system.partitions.impl;
 
-import io.atomix.raft.storage.log.Indexed;
+import io.atomix.raft.storage.log.IndexedRaftRecord;
 import io.atomix.raft.storage.log.RaftLogReader;
-import io.atomix.raft.storage.log.entry.RaftLogEntry;
 import io.zeebe.broker.system.partitions.AtomixRecordEntrySupplier;
 import java.util.Optional;
 
@@ -21,7 +20,7 @@ public final class AtomixRecordEntrySupplierImpl implements AtomixRecordEntrySup
   }
 
   @Override
-  public Optional<Indexed<RaftLogEntry>> getPreviousIndexedEntry(final long position) {
+  public Optional<IndexedRaftRecord> getPreviousIndexedEntry(final long position) {
     // Here we are seeking twice. Since this method is only called when taking a snapshot it is ok
     // to be not very efficient.
     final long recordIndex = reader.seekToAsqn(position);

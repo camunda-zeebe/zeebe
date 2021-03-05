@@ -33,10 +33,11 @@ import io.atomix.raft.protocol.ReconfigureRequest;
 import io.atomix.raft.protocol.ReconfigureResponse;
 import io.atomix.raft.protocol.VoteRequest;
 import io.atomix.raft.protocol.VoteResponse;
+import io.atomix.raft.storage.log.entry.ApplicationEntry;
 import io.atomix.raft.storage.log.entry.ConfigurationEntry;
 import io.atomix.raft.storage.log.entry.InitializeEntry;
+import io.atomix.raft.storage.log.entry.RaftLogEntry;
 import io.atomix.raft.storage.system.Configuration;
-import io.atomix.raft.zeebe.ZeebeEntry;
 import io.atomix.utils.serializer.Namespace;
 import io.atomix.utils.serializer.Namespace.Builder;
 import io.atomix.utils.serializer.Namespaces;
@@ -80,7 +81,7 @@ public final class RaftNamespaces {
           .register(RaftMember.Type.class)
           .register(Instant.class)
           .register(Configuration.class)
-          .register(ZeebeEntry.class)
+          .register(ApplicationEntry.class)
           .name("RaftProtocol")
           .build();
 
@@ -103,7 +104,8 @@ public final class RaftNamespaces {
           .register(RaftMember.Type.class)
           .register(Instant.class)
           .register(Configuration.class)
-          .register(ZeebeEntry.class)
+          .register(ApplicationEntry.class)
+          .register(RaftLogEntry.class)
           .name("RaftStorage")
           .build();
 

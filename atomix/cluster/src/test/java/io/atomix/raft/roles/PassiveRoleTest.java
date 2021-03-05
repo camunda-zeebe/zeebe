@@ -25,8 +25,8 @@ import io.atomix.raft.protocol.AppendRequest;
 import io.atomix.raft.protocol.AppendResponse;
 import io.atomix.raft.storage.RaftStorage;
 import io.atomix.raft.storage.log.RaftLog;
+import io.atomix.raft.storage.log.entry.ApplicationEntry;
 import io.atomix.raft.storage.log.entry.RaftLogEntry;
-import io.atomix.raft.zeebe.ZeebeEntry;
 import io.atomix.utils.serializer.Namespace;
 import io.atomix.utils.serializer.Namespace.Builder;
 import io.atomix.utils.serializer.Namespaces;
@@ -48,9 +48,9 @@ import org.junit.rules.Timeout;
 public class PassiveRoleTest {
 
   private static final Namespace NAMESPACE =
-      new Builder().register(Namespaces.BASIC).register(ZeebeEntry.class).build();
+      new Builder().register(Namespaces.BASIC).register(ApplicationEntry.class).build();
   @Rule public Timeout timeout = new Timeout(30, TimeUnit.SECONDS);
-  private final ZeebeEntry entry = new ZeebeEntry(1, 1, 0, 1, ByteBuffer.allocate(0));
+  private final ApplicationEntry entry = new ApplicationEntry(0, 1, ByteBuffer.allocate(0));
   private RaftLog log;
   private PassiveRole role;
 
@@ -101,7 +101,7 @@ public class PassiveRoleTest {
   private List<RaftLogEntry> generateEntries(final int numEntries) {
     final List<RaftLogEntry> entries = new ArrayList<>();
     for (int i = 0; i < numEntries; i++) {
-      entries.add(new ZeebeEntry(1, 1, i + 1, i + 1, ByteBuffer.allocate(0)));
+      entries.add(new RaftLogEntry(1, new ApplicationEntry(i + 1, i + 1, ByteBuffer.allocate(0))));
     }
 
     return entries;

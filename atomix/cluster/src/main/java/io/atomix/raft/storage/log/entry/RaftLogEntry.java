@@ -21,12 +21,42 @@ import static com.google.common.base.MoreObjects.toStringHelper;
 import io.atomix.raft.storage.log.RaftLog;
 
 /** Stores a state change in a {@link RaftLog}. */
-public abstract class RaftLogEntry {
+public class RaftLogEntry {
 
-  protected final long term;
+  private final long term;
+  private final RaftEntry entry;
 
-  public RaftLogEntry(final long term) {
+  public RaftLogEntry(final long term, final RaftEntry entry) {
     this.term = term;
+    this.entry = entry;
+  }
+
+  public RaftEntry entry() {
+    return entry;
+  }
+
+  public boolean isApplicationEntry() {
+    return entry instanceof ApplicationEntry;
+  }
+
+  public ApplicationEntry getApplicationEntry() {
+    return (ApplicationEntry) entry;
+  }
+
+  public boolean isConfigurationEntry() {
+    return entry instanceof ConfigurationEntry;
+  }
+
+  public ConfigurationEntry getConfigurationEntry() {
+    return (ConfigurationEntry) entry;
+  }
+
+  public boolean isInitialEntry() {
+    return entry instanceof InitializeEntry;
+  }
+
+  public InitializeEntry getInitialEntry() {
+    return (InitializeEntry) entry;
   }
 
   /**

@@ -9,8 +9,9 @@ package io.zeebe.broker.system.partitions.impl;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import io.atomix.raft.storage.log.Indexed;
-import io.atomix.raft.zeebe.ZeebeEntry;
+import io.atomix.raft.storage.log.IndexedRaftRecord;
+import io.atomix.raft.storage.log.entry.ApplicationEntry;
+import io.atomix.raft.storage.log.entry.RaftLogEntry;
 import io.zeebe.broker.system.partitions.SnapshotReplication;
 import io.zeebe.db.impl.rocksdb.ZeebeRocksDbFactory;
 import io.zeebe.snapshots.broker.ConstructableSnapshotStore;
@@ -63,8 +64,8 @@ public final class FailingSnapshotChunkReplicationTest {
             replicator,
             l ->
                 Optional.of(
-                    new Indexed(
-                        l, new ZeebeEntry(1, System.currentTimeMillis(), 1, 10, null), 0, -1)),
+                    new IndexedRaftRecord(
+                        l, new RaftLogEntry(1, new ApplicationEntry(1, 10, null)), 0, -1)),
             db -> Long.MAX_VALUE);
     senderStore.addSnapshotListener(replicatorSnapshotController);
 
@@ -78,8 +79,8 @@ public final class FailingSnapshotChunkReplicationTest {
             replicator,
             l ->
                 Optional.ofNullable(
-                    new Indexed(
-                        l, new ZeebeEntry(1, System.currentTimeMillis(), 1, 10, null), 0, -1)),
+                    new IndexedRaftRecord(
+                        l, new RaftLogEntry(1, new ApplicationEntry(1, 10, null)), 0, -1)),
             db -> Long.MAX_VALUE);
     receiverStore.addSnapshotListener(receiverSnapshotController);
 

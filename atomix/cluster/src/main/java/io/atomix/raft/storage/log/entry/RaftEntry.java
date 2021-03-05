@@ -13,15 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.raft.zeebe;
+package io.atomix.raft.storage.log.entry;
 
-import io.atomix.raft.storage.log.entry.ApplicationEntry;
-
-public class NoopEntryValidator implements EntryValidator {
-
-  @Override
-  public ValidationResult validateEntry(
-      final ApplicationEntry lastEntry, final ApplicationEntry entry) {
-    return ValidationResult.success();
-  }
-}
+public interface RaftEntry {}

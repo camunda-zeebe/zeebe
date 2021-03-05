@@ -19,11 +19,9 @@ import static org.junit.Assert.assertTrue;
 
 import io.atomix.raft.RaftServer.Role;
 import io.atomix.raft.partition.impl.RaftPartitionServer;
-import io.atomix.raft.storage.log.Indexed;
+import io.atomix.raft.storage.log.IndexedRaftRecord;
 import io.atomix.raft.storage.log.RaftLogReader;
 import io.atomix.raft.storage.log.RaftLogReader.Mode;
-import io.atomix.raft.storage.log.entry.RaftLogEntry;
-import io.atomix.raft.zeebe.ZeebeEntry;
 import io.atomix.raft.zeebe.ZeebeLogAppender;
 import java.time.Duration;
 import java.util.Collection;
@@ -72,31 +70,31 @@ public class ZeebeTestHelper {
         .findFirst();
   }
 
-  public void awaitAllContain(final int partitionId, final Indexed<ZeebeEntry> indexed) {
+  public void awaitAllContain(final int partitionId, final IndexedRaftRecord indexed) {
     awaitAllContains(nodes, partitionId, indexed);
   }
 
   public void awaitAllContains(
       final Collection<ZeebeTestNode> nodes,
       final int partitionId,
-      final Indexed<ZeebeEntry> indexed) {
+      final IndexedRaftRecord indexed) {
     await(() -> nodes.stream().allMatch(node -> containsIndexed(node, partitionId, indexed)));
   }
 
   public boolean containsIndexed(
-      final ZeebeTestNode node, final int partitionId, final Indexed<ZeebeEntry> indexed) {
+      final ZeebeTestNode node, final int partitionId, final IndexedRaftRecord indexed) {
     final RaftPartitionServer partition = node.getPartitionServer(partitionId);
     return containsIndexed(partition, indexed);
   }
 
   public boolean containsIndexed(
-      final RaftPartitionServer partition, final Indexed<ZeebeEntry> indexed) {
+      final RaftPartitionServer partition, final IndexedRaftRecord indexed) {
     try (final RaftLogReader reader = partition.openReader(indexed.index(), Mode.COMMITS)) {
 
       if (reader.hasNext()) {
-        final Indexed<RaftLogEntry> entry = reader.next();
+        final IndexedRaftRecord entry = reader.next();
         if (entry.index() == indexed.index()) {
-          return isEntryEqualTo(entry.cast(), indexed);
+          return isEntryEqualTo(entry, indexed);
         }
       }
     }
@@ -104,10 +102,8 @@ public class ZeebeTestHelper {
     return false;
   }
 
-  public boolean isEntryEqualTo(
-      final Indexed<ZeebeEntry> indexed, final Indexed<ZeebeEntry> other) {
-    return indexed.entry().term() == other.entry().term()
-        && indexed.entry().data().equals(other.entry().data());
+  public boolean isEntryEqualTo(final IndexedRaftRecord indexed, final IndexedRaftRecord other) {
+    return indexed.equals(other);
   }
 
   public void await(final BooleanSupplier predicate) {
@@ -122,7 +118,7 @@ public class ZeebeTestHelper {
   }
 
   public void awaitContains(
-      final ZeebeTestNode node, final int partitionId, final Indexed<ZeebeEntry> indexed) {
+      final ZeebeTestNode node, final int partitionId, final IndexedRaftRecord indexed) {
     await(() -> containsIndexed(node, partitionId, indexed));
   }
 
