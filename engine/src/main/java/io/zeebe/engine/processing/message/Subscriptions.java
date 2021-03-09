@@ -7,9 +7,10 @@
  */
 package io.zeebe.engine.processing.message;
 
+import static io.zeebe.util.buffer.BufferUtil.cloneBuffer;
+
 import io.zeebe.protocol.impl.record.value.message.MessageStartEventSubscriptionRecord;
 import io.zeebe.protocol.impl.record.value.message.MessageSubscriptionRecord;
-import io.zeebe.util.buffer.BufferUtil;
 import io.zeebe.util.collection.Reusable;
 import io.zeebe.util.collection.ReusableObjectList;
 import java.util.function.Consumer;
@@ -38,14 +39,14 @@ public final class Subscriptions {
 
   public void add(final MessageSubscriptionRecord subscription) {
     final var newSubscription = subscriptions.add();
-    newSubscription.setBpmnProcessId(BufferUtil.cloneBuffer(subscription.getBpmnProcessIdBuffer()));
+    newSubscription.setBpmnProcessId(cloneBuffer(subscription.getBpmnProcessIdBuffer()));
     newSubscription.processInstanceKey = subscription.getProcessInstanceKey();
     newSubscription.elementInstanceKey = subscription.getElementInstanceKey();
   }
 
   public void add(final MessageStartEventSubscriptionRecord subscription) {
     final var newSubscription = subscriptions.add();
-    newSubscription.setBpmnProcessId(subscription.getBpmnProcessIdBuffer());
+    newSubscription.setBpmnProcessId(cloneBuffer(subscription.getBpmnProcessIdBuffer()));
     newSubscription.isStartEventSubscription = true;
   }
 

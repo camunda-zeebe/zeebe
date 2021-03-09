@@ -36,4 +36,9 @@
     <differenceType>6001</differenceType>
     <field>*</field>
   </difference>
+  <difference>
+    <className>io/zeebe/protocol/record/intent/MessageStartEventSubscriptionIntent</className>
+    <differenceType>6001</differenceType>
+    <field>*</field>
+  </difference>
 </differences>

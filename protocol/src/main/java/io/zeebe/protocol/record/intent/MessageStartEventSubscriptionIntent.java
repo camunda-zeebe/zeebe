@@ -16,13 +16,9 @@
 package io.zeebe.protocol.record.intent;
 
 public enum MessageStartEventSubscriptionIntent implements Intent {
-  OPEN((short) 0),
-  OPENED((short) 1),
-
-  CORRELATED((short) 4),
-
-  CLOSE((short) 2),
-  CLOSED((short) 3);
+  CREATED((short) 0),
+  CORRELATED((short) 1),
+  DELETED((short) 2);
 
   private final short value;
 
@@ -38,15 +34,11 @@ public enum MessageStartEventSubscriptionIntent implements Intent {
   public static Intent from(final short value) {
     switch (value) {
       case 0:
-        return OPEN;
+        return CREATED;
       case 1:
-        return OPENED;
-      case 2:
-        return CLOSE;
-      case 3:
-        return CLOSED;
-      case 4:
         return CORRELATED;
+      case 2:
+        return DELETED;
       default:
         return UNKNOWN;
     }

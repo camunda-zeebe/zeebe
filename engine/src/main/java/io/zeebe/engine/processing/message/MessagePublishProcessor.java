@@ -26,7 +26,6 @@ import io.zeebe.engine.state.mutable.MutableEventScopeInstanceState;
 import io.zeebe.engine.state.mutable.MutableMessageState;
 import io.zeebe.engine.state.mutable.MutableMessageSubscriptionState;
 import io.zeebe.protocol.impl.record.value.message.MessageRecord;
-import io.zeebe.protocol.impl.record.value.message.MessageStartEventSubscriptionRecord;
 import io.zeebe.protocol.record.RejectionType;
 import io.zeebe.protocol.record.intent.MessageIntent;
 import io.zeebe.protocol.record.intent.MessageStartEventSubscriptionIntent;
@@ -172,21 +171,15 @@ public final class MessagePublishProcessor implements TypedRecordProcessor<Messa
 
             final var processInstanceKey = keyGenerator.nextKey();
 
-            // TODO (saig0): reuse the subscription record in the state (#6183)
-            final var subscriptionRecord =
-                new MessageStartEventSubscriptionRecord()
-                    .setProcessDefinitionKey(subscription.getProcessDefinitionKey())
-                    .setBpmnProcessId(subscription.getBpmnProcessIdBuffer())
-                    .setStartEventId(subscription.getStartEventIdBuffer())
-                    .setProcessInstanceKey(processInstanceKey)
-                    .setMessageName(subscription.getMessageNameBuffer())
-                    .setMessageKey(messageKey)
-                    .setCorrelationKey(correlationKeyBuffer)
-                    .setVariables(messageRecord.getVariablesBuffer());
+            subscription
+                .setProcessInstanceKey(processInstanceKey)
+                .setCorrelationKey(correlationKeyBuffer)
+                .setMessageKey(messageKey)
+                .setVariables(messageRecord.getVariablesBuffer());
 
             // TODO (saig0): the subscription should have a key (#2805)
             stateWriter.appendFollowUpEvent(
-                -1L, MessageStartEventSubscriptionIntent.CORRELATED, subscriptionRecord);
+                -1L, MessageStartEventSubscriptionIntent.CORRELATED, subscription);
 
             eventHandle.activateStartEvent(
                 streamWriter,

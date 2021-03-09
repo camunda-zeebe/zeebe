@@ -81,7 +81,7 @@ public final class BpmnElementTypeTest {
             public void test() {
               // wait for message subscription for the start event to be opened
               RecordingExporter.messageStartEventSubscriptionRecords(
-                      MessageStartEventSubscriptionIntent.OPENED)
+                      MessageStartEventSubscriptionIntent.CREATED)
                   .getFirst();
 
               ENGINE.message().withName(messageName()).withCorrelationKey("id").publish();

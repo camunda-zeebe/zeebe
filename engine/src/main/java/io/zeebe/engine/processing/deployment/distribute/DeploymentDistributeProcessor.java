@@ -53,6 +53,6 @@ public final class DeploymentDistributeProcessor implements TypedRecordProcessor
     deploymentResponder.sendDeploymentResponse(deploymentKey, partitionId);
 
     messageStartEventSubscriptionManager.tryReOpenMessageStartEventSubscription(
-        deploymentEvent, streamWriter);
+        deploymentEvent, stateWriter);
   }
 }

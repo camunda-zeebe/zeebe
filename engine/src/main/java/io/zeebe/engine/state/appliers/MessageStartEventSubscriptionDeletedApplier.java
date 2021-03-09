@@ -5,24 +5,22 @@
  * Licensed under the Zeebe Community License 1.1. You may not use this file
  * except in compliance with the Zeebe Community License 1.1.
  */
-package io.zeebe.engine.processing.message;
+package io.zeebe.engine.state.appliers;
 
-import io.zeebe.engine.processing.streamprocessor.TypedRecord;
-import io.zeebe.engine.processing.streamprocessor.TypedRecordProcessor;
-import io.zeebe.engine.processing.streamprocessor.writers.TypedResponseWriter;
-import io.zeebe.engine.processing.streamprocessor.writers.TypedStreamWriter;
+import io.zeebe.engine.state.TypedEventApplier;
 import io.zeebe.engine.state.mutable.MutableEventScopeInstanceState;
 import io.zeebe.engine.state.mutable.MutableMessageStartEventSubscriptionState;
 import io.zeebe.protocol.impl.record.value.message.MessageStartEventSubscriptionRecord;
 import io.zeebe.protocol.record.intent.MessageStartEventSubscriptionIntent;
 
-public final class CloseMessageStartEventSubscriptionProcessor
-    implements TypedRecordProcessor<MessageStartEventSubscriptionRecord> {
+public final class MessageStartEventSubscriptionDeletedApplier
+    implements TypedEventApplier<
+        MessageStartEventSubscriptionIntent, MessageStartEventSubscriptionRecord> {
 
   private final MutableMessageStartEventSubscriptionState subscriptionState;
   private final MutableEventScopeInstanceState eventScopeInstanceState;
 
-  public CloseMessageStartEventSubscriptionProcessor(
+  public MessageStartEventSubscriptionDeletedApplier(
       final MutableMessageStartEventSubscriptionState subscriptionState,
       final MutableEventScopeInstanceState eventScopeInstanceState) {
     this.subscriptionState = subscriptionState;
@@ -30,18 +28,11 @@ public final class CloseMessageStartEventSubscriptionProcessor
   }
 
   @Override
-  public void processRecord(
-      final TypedRecord<MessageStartEventSubscriptionRecord> record,
-      final TypedResponseWriter responseWriter,
-      final TypedStreamWriter streamWriter) {
-    final MessageStartEventSubscriptionRecord subscriptionRecord = record.getValue();
-    final long processDefinitionKey = subscriptionRecord.getProcessDefinitionKey();
+  public void applyState(final long key, final MessageStartEventSubscriptionRecord value) {
+    final var processDefinitionKey = value.getProcessDefinitionKey();
 
     subscriptionState.removeSubscriptionsOfProcess(processDefinitionKey);
 
     eventScopeInstanceState.deleteInstance(processDefinitionKey);
-
-    streamWriter.appendFollowUpEvent(
-        record.getKey(), MessageStartEventSubscriptionIntent.CLOSED, subscriptionRecord);
   }
 }

@@ -35,7 +35,7 @@ public final class MessageStartEventSubscriptionMultiplePartitionsTest {
     // then
     final List<Record<MessageStartEventSubscriptionRecordValue>> subscriptions =
         RecordingExporter.messageStartEventSubscriptionRecords(
-                MessageStartEventSubscriptionIntent.OPENED)
+                MessageStartEventSubscriptionIntent.CREATED)
             .limit(3)
             .asList();
 

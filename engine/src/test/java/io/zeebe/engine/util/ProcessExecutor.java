@@ -188,7 +188,7 @@ public class ProcessExecutor {
 
   private void publishStartMessage(final StepPublishStartMessage publishMessage) {
     RecordingExporter.messageStartEventSubscriptionRecords(
-            MessageStartEventSubscriptionIntent.OPENED)
+            MessageStartEventSubscriptionIntent.CREATED)
         .withMessageName(publishMessage.getMessageName())
         .await();
 

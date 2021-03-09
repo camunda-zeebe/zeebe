@@ -102,7 +102,7 @@ public final class DeploymentCreateProcessor implements TypedRecordProcessor<Dep
 
       deploymentDistributionBehavior.distributeDeployment(deploymentEvent, key);
       messageStartEventSubscriptionManager.tryReOpenMessageStartEventSubscription(
-          deploymentEvent, streamWriter);
+          deploymentEvent, stateWriter);
 
     } else {
       responseWriter.writeRejectionOnCommand(

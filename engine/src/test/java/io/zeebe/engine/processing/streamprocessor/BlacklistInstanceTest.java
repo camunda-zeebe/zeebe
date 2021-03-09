@@ -116,18 +116,14 @@ public final class BlacklistInstanceTest {
       ////////////////////////////////////////
       ////////// MSG START EVENT SUB /////////
       ////////////////////////////////////////
-      {ValueType.MESSAGE_START_EVENT_SUBSCRIPTION, MessageStartEventSubscriptionIntent.OPEN, false},
       {
         ValueType.MESSAGE_START_EVENT_SUBSCRIPTION,
-        MessageStartEventSubscriptionIntent.OPENED,
+        MessageStartEventSubscriptionIntent.CREATED,
         false
       },
       {
-        ValueType.MESSAGE_START_EVENT_SUBSCRIPTION, MessageStartEventSubscriptionIntent.CLOSE, false
-      },
-      {
         ValueType.MESSAGE_START_EVENT_SUBSCRIPTION,
-        MessageStartEventSubscriptionIntent.CLOSED,
+        MessageStartEventSubscriptionIntent.DELETED,
         false
       },
 

@@ -41,7 +41,7 @@ public final class MessageStartEventSubscriptionTest {
 
     final Record<MessageStartEventSubscriptionRecordValue> subscription =
         RecordingExporter.messageStartEventSubscriptionRecords(
-                MessageStartEventSubscriptionIntent.OPENED)
+                MessageStartEventSubscriptionIntent.CREATED)
             .getFirst();
 
     // then
@@ -57,7 +57,7 @@ public final class MessageStartEventSubscriptionTest {
 
     final List<Record<MessageStartEventSubscriptionRecordValue>> subscriptions =
         RecordingExporter.messageStartEventSubscriptionRecords(
-                MessageStartEventSubscriptionIntent.OPENED)
+                MessageStartEventSubscriptionIntent.CREATED)
             .limit(2)
             .asList();
 
@@ -82,22 +82,19 @@ public final class MessageStartEventSubscriptionTest {
     // then
 
     final List<Record<MessageStartEventSubscriptionRecordValue>> subscriptions =
-        RecordingExporter.messageStartEventSubscriptionRecords().limit(6).asList();
+        RecordingExporter.messageStartEventSubscriptionRecords().limit(3).asList();
 
     final List<Intent> intents =
         subscriptions.stream().map(Record::getIntent).collect(Collectors.toList());
 
     assertThat(intents)
         .containsExactly(
-            MessageStartEventSubscriptionIntent.OPEN,
-            MessageStartEventSubscriptionIntent.OPENED,
-            MessageStartEventSubscriptionIntent.CLOSE, // close old version
-            MessageStartEventSubscriptionIntent.OPEN, // open new
-            MessageStartEventSubscriptionIntent.CLOSED,
-            MessageStartEventSubscriptionIntent.OPENED);
+            MessageStartEventSubscriptionIntent.CREATED,
+            MessageStartEventSubscriptionIntent.DELETED,
+            MessageStartEventSubscriptionIntent.CREATED);
 
     final long closingProcessDefinitionKey =
-        subscriptions.get(2).getValue().getProcessDefinitionKey();
+        subscriptions.get(1).getValue().getProcessDefinitionKey();
     assertThat(closingProcessDefinitionKey)
         .isEqualTo(subscriptions.get(0).getValue().getProcessDefinitionKey());
   }

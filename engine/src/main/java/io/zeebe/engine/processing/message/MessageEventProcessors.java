@@ -18,7 +18,6 @@ import io.zeebe.engine.state.mutable.MutableMessageState;
 import io.zeebe.engine.state.mutable.MutableMessageSubscriptionState;
 import io.zeebe.protocol.record.ValueType;
 import io.zeebe.protocol.record.intent.MessageIntent;
-import io.zeebe.protocol.record.intent.MessageStartEventSubscriptionIntent;
 import io.zeebe.protocol.record.intent.MessageSubscriptionIntent;
 
 public final class MessageEventProcessors {
@@ -72,16 +71,6 @@ public final class MessageEventProcessors {
             MessageSubscriptionIntent.REJECT,
             new MessageSubscriptionRejectProcessor(
                 messageState, subscriptionState, subscriptionCommandSender, writers))
-        .onCommand(
-            ValueType.MESSAGE_START_EVENT_SUBSCRIPTION,
-            MessageStartEventSubscriptionIntent.OPEN,
-            new OpenMessageStartEventSubscriptionProcessor(
-                startEventSubscriptionState, zeebeState.getEventScopeInstanceState()))
-        .onCommand(
-            ValueType.MESSAGE_START_EVENT_SUBSCRIPTION,
-            MessageStartEventSubscriptionIntent.CLOSE,
-            new CloseMessageStartEventSubscriptionProcessor(
-                startEventSubscriptionState, eventScopeInstanceState))
         .withListener(
             new MessageObserver(messageState, subscriptionState, subscriptionCommandSender));
   }

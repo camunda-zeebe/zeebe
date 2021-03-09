@@ -11,7 +11,7 @@ import io.zeebe.engine.processing.deployment.model.element.ExecutableCatchEventE
 import io.zeebe.engine.processing.deployment.model.element.ExecutableMessage;
 import io.zeebe.engine.processing.deployment.model.element.ExecutableProcess;
 import io.zeebe.engine.processing.deployment.model.element.ExecutableStartEvent;
-import io.zeebe.engine.processing.streamprocessor.writers.TypedStreamWriter;
+import io.zeebe.engine.processing.streamprocessor.writers.StateWriter;
 import io.zeebe.engine.state.deployment.DeployedProcess;
 import io.zeebe.engine.state.immutable.ProcessState;
 import io.zeebe.protocol.impl.record.value.deployment.DeploymentRecord;
@@ -32,12 +32,12 @@ public class MessageStartEventSubscriptionManager {
   }
 
   public void tryReOpenMessageStartEventSubscription(
-      final DeploymentRecord deploymentRecord, final TypedStreamWriter streamWriter) {
+      final DeploymentRecord deploymentRecord, final StateWriter stateWriter) {
 
     for (final ProcessRecord processRecord : deploymentRecord.processes()) {
       if (isLatestProcess(processRecord)) {
-        closeExistingMessageStartEventSubscriptions(processRecord, streamWriter);
-        openMessageStartEventSubscriptions(processRecord, streamWriter);
+        closeExistingMessageStartEventSubscriptions(processRecord, stateWriter);
+        openMessageStartEventSubscriptions(processRecord, stateWriter);
       }
     }
   }
@@ -50,7 +50,7 @@ public class MessageStartEventSubscriptionManager {
   }
 
   private void closeExistingMessageStartEventSubscriptions(
-      final ProcessRecord processRecord, final TypedStreamWriter streamWriter) {
+      final ProcessRecord processRecord, final StateWriter stateWriter) {
     final DeployedProcess lastMsgProcess = findLastMessageStartProcess(processRecord);
     if (lastMsgProcess == null) {
       return;
@@ -58,7 +58,10 @@ public class MessageStartEventSubscriptionManager {
 
     subscriptionRecord.reset();
     subscriptionRecord.setProcessDefinitionKey(lastMsgProcess.getKey());
-    streamWriter.appendNewCommand(MessageStartEventSubscriptionIntent.CLOSE, subscriptionRecord);
+
+    // TODO (saig0): we should write one DELETED event for each created subscription (#2805)
+    stateWriter.appendFollowUpEvent(
+        -1L, MessageStartEventSubscriptionIntent.DELETED, subscriptionRecord);
   }
 
   private DeployedProcess findLastMessageStartProcess(final ProcessRecord processRecord) {
@@ -77,7 +80,7 @@ public class MessageStartEventSubscriptionManager {
   }
 
   private void openMessageStartEventSubscriptions(
-      final ProcessRecord processRecord, final TypedStreamWriter streamWriter) {
+      final ProcessRecord processRecord, final StateWriter stateWriter) {
     final long processDefinitionKey = processRecord.getKey();
     final DeployedProcess processDefinition = processState.getProcessByKey(processDefinitionKey);
     final ExecutableProcess process = processDefinition.getProcess();
@@ -99,8 +102,10 @@ public class MessageStartEventSubscriptionManager {
                       .setProcessDefinitionKey(processDefinitionKey)
                       .setBpmnProcessId(process.getId())
                       .setStartEventId(startEvent.getId());
-                  streamWriter.appendNewCommand(
-                      MessageStartEventSubscriptionIntent.OPEN, subscriptionRecord);
+
+                  // TODO (saig0): the subscription should have a key (#2805)
+                  stateWriter.appendFollowUpEvent(
+                      -1L, MessageStartEventSubscriptionIntent.CREATED, subscriptionRecord);
                 });
       }
     }

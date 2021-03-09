@@ -287,7 +287,7 @@ public final class ProcessExecutionCleanStateTest {
         .deploy();
 
     RecordingExporter.messageStartEventSubscriptionRecords(
-            MessageStartEventSubscriptionIntent.CLOSED)
+            MessageStartEventSubscriptionIntent.DELETED)
         .withWorkfloKey(processDefinitionKey)
         .await();
 
