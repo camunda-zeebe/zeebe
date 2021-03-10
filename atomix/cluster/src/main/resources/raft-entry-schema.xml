@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<sbe:messageSchema xmlns:sbe="http://fixprotocol.io/2016/sbe"
+  xmlns:xi="http://www.w3.org/2001/XInclude"
+  package="io.atomix.raft.storage.log.entry" id="8" version="1"
+  semanticVersion="0.1.0" description="Raft Entry" byteOrder="littleEndian">
+
+  <xi:include href="../../../../../protocol/src/main/resources/common-types.xml"/>
+
+  <types>
+    <enum name="Type" encodingType="uint8">
+      <validValue name="INACTIVE">0</validValue>
+      <validValue name="PASSIVE">1</validValue>
+      <validValue name="PROMOTABLE">2</validValue>
+      <validValue name="ACTIVE">3</validValue>
+    </enum>
+  </types>
+
+  <types>
+    <!-- binary data -->
+    <composite name="blob">
+      <type name="length" primitiveType="uint32" maxValue="2147483647"/>
+      <type name="varData" primitiveType="uint8" length="0"/>
+    </composite>
+
+  </types>
+
+  <sbe:message name="RaftLogEntry" id="1">
+    <field name="term" id="0" type="uint64"/>
+    <data name="entry" id="1" type="blob"/>
+  </sbe:message>
+
+  <sbe:message name="ApplicationEntry" id="2">
+    <field name="lowestAsqn" id="0" type="uint64"/>
+    <field name="highestAsqn" id="1" type="uint64"/>
+    <data name="applicationData" id="2" type="blob"/>
+  </sbe:message>
+
+  <sbe:message name="InitialEntry" id="3">
+  </sbe:message>
+
+  <sbe:message name="ConfigurationEntry" id="4">
+    <field name="timestamp" id="1" type="uint64"/>
+    <group name="RaftMember" id="2" dimensionType="groupSizeEncoding">
+      <field name="type" id="1" type="Type"/>
+      <field name="updated" id="2" type="int64"/>
+      <field name="memberId" id="3" type="int32"/>
+    </group>
+  </sbe:message>
+</sbe:messageSchema>

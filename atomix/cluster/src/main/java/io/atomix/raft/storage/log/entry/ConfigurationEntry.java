@@ -21,6 +21,7 @@ import static com.google.common.base.MoreObjects.toStringHelper;
 import io.atomix.raft.cluster.RaftMember;
 import io.atomix.utils.misc.TimestampPrinter;
 import java.util.Collection;
+import java.util.Objects;
 
 /**
  * Stores a cluster configuration.
@@ -59,5 +60,22 @@ public class ConfigurationEntry implements RaftEntry {
         .add("timestamp", new TimestampPrinter(timestamp))
         .add("members", members)
         .toString();
+  }
+
+  @Override
+  public boolean equals(final Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
+    final ConfigurationEntry that = (ConfigurationEntry) o;
+    return timestamp == that.timestamp && Objects.equals(members, that.members);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(members, timestamp);
   }
 }

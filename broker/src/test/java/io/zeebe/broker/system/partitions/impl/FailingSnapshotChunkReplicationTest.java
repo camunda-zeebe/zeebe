@@ -28,6 +28,7 @@ import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.function.Consumer;
+import org.agrona.concurrent.UnsafeBuffer;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -65,7 +66,10 @@ public final class FailingSnapshotChunkReplicationTest {
             l ->
                 Optional.of(
                     new IndexedRaftRecord(
-                        l, new RaftLogEntry(1, new ApplicationEntry(1, 10, null)), 0, -1)),
+                        l,
+                        new RaftLogEntry(1, new ApplicationEntry(1, 10, new UnsafeBuffer())),
+                        0,
+                        -1)),
             db -> Long.MAX_VALUE);
     senderStore.addSnapshotListener(replicatorSnapshotController);
 
@@ -80,7 +84,10 @@ public final class FailingSnapshotChunkReplicationTest {
             l ->
                 Optional.ofNullable(
                     new IndexedRaftRecord(
-                        l, new RaftLogEntry(1, new ApplicationEntry(1, 10, null)), 0, -1)),
+                        l,
+                        new RaftLogEntry(1, new ApplicationEntry(1, 10, new UnsafeBuffer())),
+                        0,
+                        -1)),
             db -> Long.MAX_VALUE);
     receiverStore.addSnapshotListener(receiverSnapshotController);
 

@@ -40,6 +40,7 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import org.agrona.concurrent.UnsafeBuffer;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -84,7 +85,10 @@ public final class AsyncSnapshotingTest {
             l ->
                 Optional.of(
                     new IndexedRaftRecord(
-                        l + 100, new RaftLogEntry(1, new ApplicationEntry(1, 10, null)), 0, -1)),
+                        l + 100,
+                        new RaftLogEntry(1, new ApplicationEntry(1L, 10L, new UnsafeBuffer())),
+                        0,
+                        -1)),
             db -> Long.MAX_VALUE);
 
     snapshotController.openDb();

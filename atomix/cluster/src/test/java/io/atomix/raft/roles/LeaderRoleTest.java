@@ -347,9 +347,6 @@ public class LeaderRoleTest {
                 assertThat(lastEntry.highestPosition()).isEqualTo(7);
                 assertThat(entry.lowestPosition()).isEqualTo(9);
                 assertThat(entry.highestPosition()).isEqualTo(9);
-                entry.data().rewind();
-                data.rewind();
-                assertThat(entry.data()).isEqualTo(data);
                 latch.countDown();
                 return ValidationResult.failure("expected");
               }

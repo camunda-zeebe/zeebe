@@ -19,6 +19,8 @@ package io.atomix.raft.storage.log;
 import io.atomix.raft.partition.impl.RaftNamespaces;
 import io.atomix.raft.storage.log.RaftLogReader.Mode;
 import io.atomix.raft.storage.log.entry.ApplicationEntry;
+import io.atomix.raft.storage.log.entry.ConfigurationEntry;
+import io.atomix.raft.storage.log.entry.InitializeEntry;
 import io.atomix.raft.storage.log.entry.RaftLogEntry;
 import io.atomix.utils.serializer.Namespace;
 import io.zeebe.journal.Journal;
@@ -29,21 +31,24 @@ import java.io.Closeable;
 import java.io.File;
 import java.util.Objects;
 import org.agrona.CloseHelper;
+import org.agrona.ExpandableArrayBuffer;
+import org.agrona.MutableDirectBuffer;
 import org.agrona.concurrent.UnsafeBuffer;
 
 /** Raft log. */
 public class RaftLog implements Closeable {
   private final Journal journal;
-  private final Namespace serializer;
+  private final RaftEntrySerializer serializer = new RaftEntrySBESerializer();
   private final boolean flushExplicitly;
 
   private IndexedRaftRecord lastAppendedEntry;
   private volatile long commitIndex;
 
+  private final MutableDirectBuffer writeBuffer = new ExpandableArrayBuffer();
+
   protected RaftLog(
       final Journal journal, final Namespace serializer, final boolean flushExplicitly) {
     this.journal = journal;
-    this.serializer = serializer;
     this.flushExplicitly = flushExplicitly;
   }
 
@@ -132,21 +137,37 @@ public class RaftLog implements Closeable {
     return journal.isEmpty();
   }
 
-  @SuppressWarnings("unchecked")
   public IndexedRaftRecord append(final RaftLogEntry entry) {
-    final byte[] serializedEntry = serializer.serialize(entry);
     final JournalRecord journalRecord;
 
     if (entry.isApplicationEntry()) {
       final ApplicationEntry asqnEntry = entry.getApplicationEntry();
-      journalRecord = journal.append(asqnEntry.lowestPosition(), new UnsafeBuffer(serializedEntry));
+      final int serializedLength =
+          serializer.writeApplicationEntry(entry.term(), asqnEntry, writeBuffer, 0);
+      journalRecord =
+          journal.append(
+              asqnEntry.lowestPosition(), new UnsafeBuffer(writeBuffer, 0, serializedLength));
+    } else if (entry.isInitialEntry()) {
+      final InitializeEntry initialEntry = entry.getInitialEntry();
+      final int serializedLength =
+          serializer.writeInitialEntry(entry.term(), initialEntry, writeBuffer, 0);
+      journalRecord = journal.append(new UnsafeBuffer(writeBuffer, 0, serializedLength));
+    } else if (entry.isConfigurationEntry()) {
+      final ConfigurationEntry configurationEntry = entry.getConfigurationEntry();
+      final int serializedLength =
+          serializer.writeConfigurationEntry(entry.term(), configurationEntry, writeBuffer, 0);
+      journalRecord = journal.append(new UnsafeBuffer(writeBuffer, 0, serializedLength));
     } else {
-      journalRecord = journal.append(new UnsafeBuffer(serializedEntry));
+      // TODO
+      throw new IllegalArgumentException();
     }
 
     lastAppendedEntry =
         new IndexedRaftRecord(
-            journalRecord.index(), entry, serializedEntry.length, journalRecord.checksum());
+            journalRecord.index(),
+            entry,
+            journalRecord.data().capacity(),
+            journalRecord.checksum());
     return lastAppendedEntry;
   }
 
@@ -164,10 +185,6 @@ public class RaftLog implements Closeable {
     if (flushExplicitly) {
       journal.flush();
     }
-  }
-
-  public Namespace getSerializer() {
-    return serializer;
   }
 
   @Override

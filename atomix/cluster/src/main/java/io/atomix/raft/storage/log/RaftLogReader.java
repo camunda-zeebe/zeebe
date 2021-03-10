@@ -19,15 +19,14 @@ package io.atomix.raft.storage.log;
 import io.atomix.raft.storage.log.entry.RaftLogEntry;
 import io.zeebe.journal.JournalReader;
 import io.zeebe.journal.JournalRecord;
-import java.nio.ByteBuffer;
 import java.util.NoSuchElementException;
-import org.agrona.DirectBuffer;
 
 /** Raft log reader. */
 public class RaftLogReader implements java.util.Iterator<IndexedRaftRecord>, AutoCloseable {
   private final RaftLog log;
   private final JournalReader journalReader;
   private final RaftLogReader.Mode mode;
+  private final RaftEntrySerializer serializer = new RaftEntrySBESerializer();
 
   // NOTE: nextIndex is only used if the reader is in commit mode, hence why it's not subject to
   // inconsistencies when the log is truncated/compacted/etc.
@@ -54,11 +53,16 @@ public class RaftLogReader implements java.util.Iterator<IndexedRaftRecord>, Aut
     }
 
     final JournalRecord journalRecord = journalReader.next();
-    final RaftLogEntry entry = deserialize(journalRecord.data());
+    final RaftLogEntry entry = serializer.getRaftLogEntry(journalRecord.data());
+    final IndexedRaftRecord record =
+        new IndexedRaftRecord(
+            journalRecord.index(),
+            entry,
+            journalRecord.data().capacity(),
+            journalRecord.checksum());
 
     nextIndex = journalRecord.index() + 1;
-    return new IndexedRaftRecord(
-        journalRecord.index(), entry, journalRecord.data().capacity(), journalRecord.checksum());
+    return record;
   }
 
   public long reset() {
@@ -106,31 +110,6 @@ public class RaftLogReader implements java.util.Iterator<IndexedRaftRecord>, Aut
   @Override
   public void close() {
     journalReader.close();
-  }
-
-  /**
-   * Deserializes given DirectBuffer to Object using Kryo instance in pool.
-   *
-   * @param buffer input with serialized bytes
-   * @param <T> deserialized Object type
-   * @return deserialized Object
-   */
-  private <T> T deserialize(final DirectBuffer buffer) {
-    final ByteBuffer byteBufferView;
-
-    if (buffer.byteArray() != null) {
-      byteBufferView =
-          ByteBuffer.wrap(buffer.byteArray(), buffer.wrapAdjustment(), buffer.capacity());
-    } else {
-      byteBufferView =
-          buffer
-              .byteBuffer()
-              .asReadOnlyBuffer()
-              .position(buffer.wrapAdjustment())
-              .limit(buffer.wrapAdjustment() + buffer.capacity());
-    }
-
-    return log.getSerializer().deserialize(byteBufferView);
   }
 
   /** Raft log reader mode. */

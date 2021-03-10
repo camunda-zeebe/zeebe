@@ -211,6 +211,7 @@
           <mainClass>uk.co.real_logic.sbe.SbeTool</mainClass>
           <arguments>
             <argument>${project.build.resources[0].directory}/snapshot-schema.xml</argument>
+            <argument>${project.build.resources[0].directory}/raft-entry-schema.xml</argument>
           </arguments>
           <workingDirectory>${project.build.directory}/generated-sources</workingDirectory>
           <!-- system properties defined in zeebe-parent -->

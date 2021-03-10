@@ -25,4 +25,15 @@ package io.atomix.raft.storage.log.entry;
  * following leader changes. Initialize entries are always the first entry to be committed at the
  * start of a leader's term.
  */
-public class InitializeEntry implements RaftEntry {}
+public class InitializeEntry implements RaftEntry {
+
+  @Override
+  public int hashCode() {
+    return super.hashCode();
+  }
+
+  @Override
+  public boolean equals(final Object obj) {
+    return obj instanceof InitializeEntry;
+  }
+}

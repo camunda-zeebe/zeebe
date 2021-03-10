@@ -19,6 +19,8 @@ import static com.google.common.base.MoreObjects.toStringHelper;
 
 import java.nio.ByteBuffer;
 import java.util.Objects;
+import org.agrona.DirectBuffer;
+import org.agrona.concurrent.UnsafeBuffer;
 
 /**
  * Stores an entry that contains serialized records, ordered by their position; the lowestPosition
@@ -29,13 +31,20 @@ public class ApplicationEntry implements RaftEntry {
 
   private final long lowestPosition;
   private final long highestPosition;
-  private final ByteBuffer data;
+  private final DirectBuffer data = new UnsafeBuffer();
 
   public ApplicationEntry(
       final long lowestPosition, final long highestPosition, final ByteBuffer data) {
     this.lowestPosition = lowestPosition;
     this.highestPosition = highestPosition;
-    this.data = data;
+    this.data.wrap(data);
+  }
+
+  public ApplicationEntry(
+      final long lowestPosition, final long highestPosition, final DirectBuffer data) {
+    this.lowestPosition = lowestPosition;
+    this.highestPosition = highestPosition;
+    this.data.wrap(data);
   }
 
   public long lowestPosition() {
@@ -46,7 +55,7 @@ public class ApplicationEntry implements RaftEntry {
     return highestPosition;
   }
 
-  public ByteBuffer data() {
+  public DirectBuffer data() {
     return data;
   }
 
