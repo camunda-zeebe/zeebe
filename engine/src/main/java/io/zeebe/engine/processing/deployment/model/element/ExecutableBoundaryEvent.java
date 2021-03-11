@@ -14,7 +14,7 @@ public class ExecutableBoundaryEvent extends ExecutableCatchEventElement {
   }
 
   @Override
-  public boolean shouldCloseMessageSubscriptionOnCorrelate() {
+  public boolean isInterrupting() {
     return interrupting();
   }
 }

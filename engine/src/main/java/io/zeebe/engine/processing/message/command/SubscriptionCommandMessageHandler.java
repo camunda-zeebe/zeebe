@@ -148,7 +148,7 @@ public final class SubscriptionCommandMessageHandler
         .setElementInstanceKey(openProcessInstanceSubscriptionCommand.getElementInstanceKey())
         .setMessageKey(-1)
         .setMessageName(openProcessInstanceSubscriptionCommand.getMessageName())
-        .setCloseOnCorrelate(openProcessInstanceSubscriptionCommand.shouldCloseOnCorrelate());
+        .setInterrupting(openProcessInstanceSubscriptionCommand.shouldCloseOnCorrelate());
 
     return writeCommand(
         processInstancePartitionId,

@@ -79,6 +79,7 @@ public final class MigratedStreamProcessors {
         ValueType.PROCESS_INSTANCE_SUBSCRIPTION,
         MIGRATED_INTENT_FILTER_FACTORY.apply(
             List.of(
+                ProcessInstanceSubscriptionIntent.CREATING,
                 ProcessInstanceSubscriptionIntent.CREATE,
                 ProcessInstanceSubscriptionIntent.CREATED)));
 

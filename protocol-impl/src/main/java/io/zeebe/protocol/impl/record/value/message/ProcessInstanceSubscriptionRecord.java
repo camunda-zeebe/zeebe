@@ -32,9 +32,9 @@ public final class ProcessInstanceSubscriptionRecord extends UnifiedRecordValue
   private final LongProperty messageKeyProp = new LongProperty("messageKey", -1L);
   private final StringProperty messageNameProp = new StringProperty("messageName", "");
   private final DocumentProperty variablesProp = new DocumentProperty("variables");
-  private final BooleanProperty closeOnCorrelateProp =
-      new BooleanProperty("closeOnCorrelate", true);
+  private final BooleanProperty interruptingProp = new BooleanProperty("interrupting", true);
   private final StringProperty correlationKeyProp = new StringProperty("correlationKey", "");
+  private final StringProperty elementIdProp = new StringProperty("elementId", "");
 
   public ProcessInstanceSubscriptionRecord() {
     declareProperty(subscriptionPartitionIdProp)
@@ -43,13 +43,15 @@ public final class ProcessInstanceSubscriptionRecord extends UnifiedRecordValue
         .declareProperty(messageKeyProp)
         .declareProperty(messageNameProp)
         .declareProperty(variablesProp)
-        .declareProperty(closeOnCorrelateProp)
+        .declareProperty(interruptingProp)
         .declareProperty(bpmnProcessIdProp)
-        .declareProperty(correlationKeyProp);
+        .declareProperty(correlationKeyProp)
+        .declareProperty(elementIdProp);
   }
 
-  public boolean shouldCloseOnCorrelate() {
-    return closeOnCorrelateProp.getValue();
+  @Override
+  public boolean isInterrupting() {
+    return interruptingProp.getValue();
   }
 
   @Override
@@ -147,13 +149,28 @@ public final class ProcessInstanceSubscriptionRecord extends UnifiedRecordValue
     return this;
   }
 
-  public ProcessInstanceSubscriptionRecord setCloseOnCorrelate(final boolean closeOnCorrelate) {
-    closeOnCorrelateProp.setValue(closeOnCorrelate);
+  public ProcessInstanceSubscriptionRecord setInterrupting(final boolean interrupting) {
+    interruptingProp.setValue(interrupting);
     return this;
   }
 
   @JsonIgnore
   public DirectBuffer getCorrelationKeyBuffer() {
     return correlationKeyProp.getValue();
+  }
+
+  @Override
+  public String getElementId() {
+    return bufferAsString(getElementIdBuffer());
+  }
+
+  public ProcessInstanceSubscriptionRecord setElementId(final DirectBuffer elementId) {
+    elementIdProp.setValue(elementId);
+    return this;
+  }
+
+  @JsonIgnore
+  public DirectBuffer getElementIdBuffer() {
+    return elementIdProp.getValue();
   }
 }

@@ -32,6 +32,12 @@
             },
             "correlationKey": {
               "type": "keyword"
+            },
+            "elementId": {
+              "type": "text"
+            },
+            "interrupting": {
+              "type": "boolean"
             }
           }
         }

@@ -25,7 +25,7 @@ public class ExecutableStartEvent extends ExecutableCatchEventElement {
   }
 
   @Override
-  public boolean shouldCloseMessageSubscriptionOnCorrelate() {
+  public boolean isInterrupting() {
     return interrupting();
   }
 }

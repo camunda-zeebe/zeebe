@@ -532,9 +532,10 @@ public final class JsonSerializableToJsonTest {
                   .setSubscriptionPartitionId(subscriptionPartitionId)
                   .setProcessInstanceKey(processInstanceKey)
                   .setVariables(VARIABLES_MSGPACK)
-                  .setCorrelationKey(wrapString(correlationKey));
+                  .setCorrelationKey(wrapString(correlationKey))
+                  .setElementId(wrapString("A"));
             },
-        "{'elementInstanceKey':123,'messageName':'test-message','processInstanceKey':1345,'variables':{'foo':'bar'},'bpmnProcessId':'process','messageKey':3,'correlationKey':'key'}"
+        "{'elementInstanceKey':123,'messageName':'test-message','processInstanceKey':1345,'variables':{'foo':'bar'},'bpmnProcessId':'process','messageKey':3,'correlationKey':'key','elementId':'A','interrupting':true}"
       },
 
       /////////////////////////////////////////////////////////////////////////////////////////////
@@ -551,7 +552,7 @@ public final class JsonSerializableToJsonTest {
                   .setProcessInstanceKey(processInstanceKey)
                   .setElementInstanceKey(elementInstanceKey);
             },
-        "{'elementInstanceKey':123,'messageName':'','processInstanceKey':1345,'variables':{},'bpmnProcessId':'','messageKey':-1,'correlationKey':''}"
+        "{'elementInstanceKey':123,'messageName':'','processInstanceKey':1345,'variables':{},'bpmnProcessId':'','messageKey':-1,'correlationKey':'','elementId':'','interrupting':true}"
       },
 
       /////////////////////////////////////////////////////////////////////////////////////////////

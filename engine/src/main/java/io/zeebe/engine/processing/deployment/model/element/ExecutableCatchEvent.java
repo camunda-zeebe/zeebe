@@ -27,7 +27,7 @@ public interface ExecutableCatchEvent extends ExecutableFlowElement {
 
   ExecutableMessage getMessage();
 
-  default boolean shouldCloseMessageSubscriptionOnCorrelate() {
+  default boolean isInterrupting() {
     return true;
   }
 

@@ -26,6 +26,7 @@ import io.zeebe.protocol.record.intent.ProcessInstanceSubscriptionIntent;
 public interface ProcessInstanceSubscriptionRecordValue
     extends RecordValueWithVariables, ProcessInstanceRelated {
   /** @return the process instance key */
+  @Override
   long getProcessInstanceKey();
 
   /** @return the element instance key */
@@ -42,4 +43,13 @@ public interface ProcessInstanceSubscriptionRecordValue
 
   /** @return the correlation key */
   String getCorrelationKey();
+
+  /** @return the id of the element tied to the subscription. */
+  String getElementId();
+
+  /**
+   * @return {@code true} if the event tied to the subscription is interrupting. Otherwise, it
+   *     returns {@code false} if the event is non-interrupting.
+   */
+  boolean isInterrupting();
 }

@@ -21,6 +21,7 @@ import io.zeebe.engine.processing.message.MessageNameException;
 import io.zeebe.engine.processing.message.command.SubscriptionCommandSender;
 import io.zeebe.engine.processing.streamprocessor.MigratedStreamProcessors;
 import io.zeebe.engine.processing.streamprocessor.sideeffect.SideEffects;
+import io.zeebe.engine.processing.streamprocessor.writers.StateWriter;
 import io.zeebe.engine.processing.streamprocessor.writers.TypedStreamWriter;
 import io.zeebe.engine.state.ZeebeState;
 import io.zeebe.engine.state.immutable.TimerInstanceState;
@@ -30,7 +31,9 @@ import io.zeebe.engine.state.mutable.MutableEventScopeInstanceState;
 import io.zeebe.engine.state.mutable.MutableProcessInstanceSubscriptionState;
 import io.zeebe.model.bpmn.util.time.Timer;
 import io.zeebe.protocol.impl.SubscriptionUtil;
+import io.zeebe.protocol.impl.record.value.message.ProcessInstanceSubscriptionRecord;
 import io.zeebe.protocol.impl.record.value.timer.TimerRecord;
+import io.zeebe.protocol.record.intent.ProcessInstanceSubscriptionIntent;
 import io.zeebe.protocol.record.intent.TimerIntent;
 import io.zeebe.protocol.record.value.BpmnElementType;
 import io.zeebe.util.Either;
@@ -46,12 +49,14 @@ public final class CatchEventBehavior {
   private final ExpressionProcessor expressionProcessor;
   private final SubscriptionCommandSender subscriptionCommandSender;
   private final int partitionsCount;
+  private final StateWriter stateWriter;
 
   private final MutableEventScopeInstanceState eventScopeInstanceState;
   private final MutableProcessInstanceSubscriptionState processInstanceSubscriptionState;
   private final TimerInstanceState timerInstanceState;
 
-  private final ProcessInstanceSubscription subscription = new ProcessInstanceSubscription();
+  private final ProcessInstanceSubscriptionRecord subscription =
+      new ProcessInstanceSubscriptionRecord();
   private final TimerRecord timerRecord = new TimerRecord();
   private final Map<DirectBuffer, DirectBuffer> extractedCorrelationKeys = new HashMap<>();
   private final Map<DirectBuffer, Timer> evaluatedTimers = new HashMap<>();
@@ -60,9 +65,11 @@ public final class CatchEventBehavior {
       final ZeebeState zeebeState,
       final ExpressionProcessor expressionProcessor,
       final SubscriptionCommandSender subscriptionCommandSender,
+      final StateWriter stateWriter,
       final int partitionsCount) {
     this.expressionProcessor = expressionProcessor;
     this.subscriptionCommandSender = subscriptionCommandSender;
+    this.stateWriter = stateWriter;
     this.partitionsCount = partitionsCount;
 
     eventScopeInstanceState = zeebeState.getEventScopeInstanceState();
@@ -167,32 +174,29 @@ public final class CatchEventBehavior {
 
   private void subscribeToMessageEvent(
       final BpmnElementContext context,
-      final ExecutableCatchEvent handler,
-      final DirectBuffer extractedKey,
-      final DirectBuffer extractedMessageName,
+      final ExecutableCatchEvent catchEvent,
+      final DirectBuffer correlationKey,
+      final DirectBuffer messageName,
       final SideEffects sideEffects) {
 
     final long processInstanceKey = context.getProcessInstanceKey();
     final DirectBuffer bpmnProcessId = cloneBuffer(context.getBpmnProcessId());
     final long elementInstanceKey = context.getElementInstanceKey();
 
-    final DirectBuffer correlationKey = extractedKey;
-    final DirectBuffer messageName = extractedMessageName;
-    final boolean closeOnCorrelate = handler.shouldCloseMessageSubscriptionOnCorrelate();
     final int subscriptionPartitionId =
         SubscriptionUtil.getSubscriptionPartitionId(correlationKey, partitionsCount);
 
     subscription.setSubscriptionPartitionId(subscriptionPartitionId);
     subscription.setMessageName(messageName);
     subscription.setElementInstanceKey(elementInstanceKey);
-    subscription.setCommandSentTime(ActorClock.currentTimeMillis());
     subscription.setProcessInstanceKey(processInstanceKey);
     subscription.setBpmnProcessId(bpmnProcessId);
     subscription.setCorrelationKey(correlationKey);
-    subscription.setTargetElementId(handler.getId());
-    subscription.setCloseOnCorrelate(closeOnCorrelate);
-    // todo(zell): phil will migrate this via writing the open subscription
-    processInstanceSubscriptionState.put(subscription);
+    subscription.setElementId(catchEvent.getId());
+    subscription.setInterrupting(catchEvent.isInterrupting());
+
+    // TODO (saig0): the subscription should have a key (#2805)
+    stateWriter.appendFollowUpEvent(-1L, ProcessInstanceSubscriptionIntent.CREATING, subscription);
 
     sideEffects.add(
         () ->
@@ -203,7 +207,7 @@ public final class CatchEventBehavior {
                 bpmnProcessId,
                 messageName,
                 correlationKey,
-                closeOnCorrelate));
+                catchEvent.isInterrupting()));
   }
 
   private void unsubscribeFromMessageEvents(

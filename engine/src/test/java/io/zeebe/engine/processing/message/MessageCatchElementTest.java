@@ -378,6 +378,29 @@ public final class MessageCatchElementTest {
   }
 
   @Test
+  public void testProcessInstanceSubscriptionLifecycle() {
+    // given
+    getFirstProcessInstanceSubscriptionRecord(ProcessInstanceSubscriptionIntent.CREATED);
+
+    // when
+    ENGINE_RULE.message().withCorrelationKey(correlationKey).withName(MESSAGE_NAME).publish();
+
+    // then
+    assertThat(
+            RecordingExporter.processInstanceSubscriptionRecords()
+                .withProcessInstanceKey(processInstanceKey)
+                .withMessageName(MESSAGE_NAME)
+                .limit(5))
+        .extracting(Record::getRecordType, Record::getIntent)
+        .containsExactly(
+            tuple(RecordType.EVENT, ProcessInstanceSubscriptionIntent.CREATING),
+            tuple(RecordType.COMMAND, ProcessInstanceSubscriptionIntent.CREATE),
+            tuple(RecordType.EVENT, ProcessInstanceSubscriptionIntent.CREATED),
+            tuple(RecordType.COMMAND, ProcessInstanceSubscriptionIntent.CORRELATE),
+            tuple(RecordType.EVENT, ProcessInstanceSubscriptionIntent.CORRELATED));
+  }
+
+  @Test
   public void shouldHaveSameMessageSubscriptionKey() {
     // given
     final var messageSubscriptionKey =

@@ -16,14 +16,15 @@
 package io.zeebe.protocol.record.intent;
 
 public enum ProcessInstanceSubscriptionIntent implements ProcessInstanceRelatedIntent {
-  CREATE((short) 0),
-  CREATED((short) 1),
+  CREATING((short) 0),
+  CREATE((short) 1),
+  CREATED((short) 2),
 
-  CORRELATE((short) 2),
-  CORRELATED((short) 3),
+  CORRELATE((short) 3),
+  CORRELATED((short) 4),
 
-  CLOSE((short) 4),
-  CLOSED((short) 5);
+  CLOSE((short) 5),
+  CLOSED((short) 6);
 
   private final short value;
   private final boolean shouldBlacklist;
@@ -45,16 +46,18 @@ public enum ProcessInstanceSubscriptionIntent implements ProcessInstanceRelatedI
   public static Intent from(final short value) {
     switch (value) {
       case 0:
-        return CREATE;
+        return CREATING;
       case 1:
-        return CREATED;
+        return CREATE;
       case 2:
-        return CORRELATE;
+        return CREATED;
       case 3:
-        return CORRELATED;
+        return CORRELATE;
       case 4:
-        return CLOSE;
+        return CORRELATED;
       case 5:
+        return CLOSE;
+      case 6:
         return CLOSED;
       default:
         return Intent.UNKNOWN;

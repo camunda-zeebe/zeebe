@@ -92,7 +92,11 @@ public final class IncidentStreamProcessorRule extends ExternalResource {
                   typedRecordProcessors,
                   mockSubscriptionCommandSender,
                   new CatchEventBehavior(
-                      zeebeState, expressionProcessor, mockSubscriptionCommandSender, 1),
+                      zeebeState,
+                      expressionProcessor,
+                      mockSubscriptionCommandSender,
+                      writers.state(),
+                      1),
                   mockTimerEventScheduler,
                   writers);
 

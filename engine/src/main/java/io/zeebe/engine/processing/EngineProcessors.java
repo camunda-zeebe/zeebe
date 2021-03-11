@@ -63,7 +63,11 @@ public final class EngineProcessors {
 
     final CatchEventBehavior catchEventBehavior =
         new CatchEventBehavior(
-            zeebeState, expressionProcessor, subscriptionCommandSender, partitionsCount);
+            zeebeState,
+            expressionProcessor,
+            subscriptionCommandSender,
+            writers.state(),
+            partitionsCount);
 
     addDeploymentRelatedProcessorAndServices(
         catchEventBehavior,

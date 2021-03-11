@@ -118,7 +118,11 @@ public final class ProcessInstanceStreamProcessorRule extends ExternalResource
               typedRecordProcessors,
               mockSubscriptionCommandSender,
               new CatchEventBehavior(
-                  zeebeState, expressionProcessor, mockSubscriptionCommandSender, 1),
+                  zeebeState,
+                  expressionProcessor,
+                  mockSubscriptionCommandSender,
+                  writers.state(),
+                  1),
               new DueDateTimerChecker(zeebeState.getTimerState()),
               writers);
 
