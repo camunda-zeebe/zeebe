@@ -32,5 +32,5 @@ public interface RaftEntrySerializer {
   int writeConfigurationEntry(
       long term, ConfigurationEntry entry, MutableDirectBuffer buffer, int offset);
 
-  RaftLogEntry getRaftLogEntry(DirectBuffer buffer);
+  RaftLogEntry readRaftLogEntry(DirectBuffer buffer);
 }

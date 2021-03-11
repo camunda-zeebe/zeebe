@@ -61,16 +61,7 @@ public class RaftEntrySBESerializer implements RaftEntrySerializer {
       final MutableDirectBuffer buffer,
       final int offset) {
 
-    headerEncoder
-        .wrap(buffer, offset)
-        .blockLength(raftLogEntryEncoder.sbeBlockLength())
-        .templateId(raftLogEntryEncoder.sbeTemplateId())
-        .schemaId(raftLogEntryEncoder.sbeSchemaId())
-        .version(raftLogEntryEncoder.sbeSchemaVersion());
-    raftLogEntryEncoder.wrap(buffer, offset + headerEncoder.encodedLength());
-    raftLogEntryEncoder.term(term);
-
-    final var entryOffset = headerEncoder.encodedLength() + raftLogEntryEncoder.encodedLength();
+    final int entryOffset = writeRaftFrame(term, buffer, offset);
 
     headerEncoder
         .wrap(buffer, offset + entryOffset)
@@ -94,16 +85,7 @@ public class RaftEntrySBESerializer implements RaftEntrySerializer {
       final MutableDirectBuffer buffer,
       final int offset) {
 
-    headerEncoder
-        .wrap(buffer, offset)
-        .blockLength(raftLogEntryEncoder.sbeBlockLength())
-        .templateId(raftLogEntryEncoder.sbeTemplateId())
-        .schemaId(raftLogEntryEncoder.sbeSchemaId())
-        .version(raftLogEntryEncoder.sbeSchemaVersion());
-    raftLogEntryEncoder.wrap(buffer, offset + headerEncoder.encodedLength());
-    raftLogEntryEncoder.term(term);
-
-    final var entryOffset = headerEncoder.encodedLength() + raftLogEntryEncoder.encodedLength();
+    final int entryOffset = writeRaftFrame(term, buffer, offset);
 
     headerEncoder
         .wrap(buffer, offset + entryOffset)
@@ -122,16 +104,7 @@ public class RaftEntrySBESerializer implements RaftEntrySerializer {
       final ConfigurationEntry entry,
       final MutableDirectBuffer buffer,
       final int offset) {
-    headerEncoder
-        .wrap(buffer, offset)
-        .blockLength(raftLogEntryEncoder.sbeBlockLength())
-        .templateId(raftLogEntryEncoder.sbeTemplateId())
-        .schemaId(raftLogEntryEncoder.sbeSchemaId())
-        .version(raftLogEntryEncoder.sbeSchemaVersion());
-    raftLogEntryEncoder.wrap(buffer, offset + headerEncoder.encodedLength());
-    raftLogEntryEncoder.term(term);
-
-    final var entryOffset = headerEncoder.encodedLength() + raftLogEntryEncoder.encodedLength();
+    final int entryOffset = writeRaftFrame(term, buffer, offset);
 
     headerEncoder
         .wrap(buffer, offset + entryOffset)
@@ -143,6 +116,7 @@ public class RaftEntrySBESerializer implements RaftEntrySerializer {
     configurationEntryEncoder.wrap(buffer, offset + entryOffset + headerEncoder.encodedLength());
 
     configurationEntryEncoder.timestamp(entry.timestamp());
+
     final var raftMemberEncoder = configurationEntryEncoder.raftMemberCount(entry.members().size());
     for (final RaftMember member : entry.members()) {
       final int memberId =
@@ -158,31 +132,8 @@ public class RaftEntrySBESerializer implements RaftEntrySerializer {
     return entryOffset + headerEncoder.encodedLength() + configurationEntryEncoder.encodedLength();
   }
 
-  private ConfigurationEntry readConfigurationEntry(
-      final DirectBuffer buffer, final int entryOffset) {
-
-    configurationEntryDecoder.wrap(
-        buffer,
-        entryOffset + headerDecoder.encodedLength(),
-        headerDecoder.blockLength(),
-        headerDecoder.version());
-
-    final long timestamp = configurationEntryDecoder.timestamp();
-
-    final RaftMemberDecoder memberDecoder1 = configurationEntryDecoder.raftMember();
-    final ArrayList<RaftMember> members = new ArrayList<>(memberDecoder1.count());
-    for (final RaftMemberDecoder memberDecoder : memberDecoder1) {
-      final RaftMember.Type type = getRaftMemberType(memberDecoder.type());
-      final Instant updated = Instant.ofEpochMilli(memberDecoder.updated());
-      final String memberId = String.valueOf(memberDecoder.memberId());
-      members.add(new DefaultRaftMember(MemberId.from(memberId), type, updated));
-    }
-
-    return new ConfigurationEntry(timestamp, members);
-  }
-
   @Override
-  public RaftLogEntry getRaftLogEntry(final DirectBuffer buffer) {
+  public RaftLogEntry readRaftLogEntry(final DirectBuffer buffer) {
     headerDecoder.wrap(buffer, 0);
     raftLogEntryDecoder.wrap(
         buffer,
@@ -213,18 +164,46 @@ public class RaftEntrySBESerializer implements RaftEntrySerializer {
     return new RaftLogEntry(term, entry);
   }
 
+  private int writeRaftFrame(final long term, final MutableDirectBuffer buffer, final int offset) {
+    headerEncoder
+        .wrap(buffer, offset)
+        .blockLength(raftLogEntryEncoder.sbeBlockLength())
+        .templateId(raftLogEntryEncoder.sbeTemplateId())
+        .schemaId(raftLogEntryEncoder.sbeSchemaId())
+        .version(raftLogEntryEncoder.sbeSchemaVersion());
+    raftLogEntryEncoder.wrap(buffer, offset + headerEncoder.encodedLength());
+    raftLogEntryEncoder.term(term);
+
+    return headerEncoder.encodedLength() + raftLogEntryEncoder.encodedLength();
+  }
+
   private Type getSBEType(final RaftMember.Type type) {
     switch (type) {
       case ACTIVE:
         return Type.ACTIVE;
       case PASSIVE:
         return Type.PASSIVE;
-
       case INACTIVE:
         return Type.INACTIVE;
       case PROMOTABLE:
         return Type.PROMOTABLE;
       default:
+        throw new IllegalStateException();
+    }
+  }
+
+  private RaftMember.Type getRaftMemberType(final Type type) {
+    switch (type) {
+      case ACTIVE:
+        return RaftMember.Type.ACTIVE;
+      case PASSIVE:
+        return RaftMember.Type.PASSIVE;
+      case INACTIVE:
+        return RaftMember.Type.INACTIVE;
+      case PROMOTABLE:
+        return RaftMember.Type.PROMOTABLE;
+      default:
+        // TODO
         throw new IllegalStateException();
     }
   }
@@ -243,22 +222,6 @@ public class RaftEntrySBESerializer implements RaftEntrySerializer {
         applicationEntryDecoder.lowestAsqn(), applicationEntryDecoder.highestAsqn(), data);
   }
 
-  private RaftMember.Type getRaftMemberType(final Type type) {
-    switch (type) {
-      case ACTIVE:
-        return RaftMember.Type.ACTIVE;
-      case PASSIVE:
-        return RaftMember.Type.PASSIVE;
-
-      case INACTIVE:
-        return RaftMember.Type.INACTIVE;
-      case PROMOTABLE:
-        return RaftMember.Type.PROMOTABLE;
-      default:
-        throw new IllegalStateException();
-    }
-  }
-
   private InitializeEntry readInitialEntry(final DirectBuffer buffer, final int entryOffset) {
     initialEntryDecoder.wrap(
         buffer,
@@ -267,5 +230,28 @@ public class RaftEntrySBESerializer implements RaftEntrySerializer {
         headerDecoder.version());
 
     return new InitializeEntry();
+  }
+
+  private ConfigurationEntry readConfigurationEntry(
+      final DirectBuffer buffer, final int entryOffset) {
+
+    configurationEntryDecoder.wrap(
+        buffer,
+        entryOffset + headerDecoder.encodedLength(),
+        headerDecoder.blockLength(),
+        headerDecoder.version());
+
+    final long timestamp = configurationEntryDecoder.timestamp();
+
+    final RaftMemberDecoder memberDecoder = configurationEntryDecoder.raftMember();
+    final ArrayList<RaftMember> members = new ArrayList<>(memberDecoder.count());
+    for (final RaftMemberDecoder member : memberDecoder) {
+      final RaftMember.Type type = getRaftMemberType(member.type());
+      final Instant updated = Instant.ofEpochMilli(member.updated());
+      final String memberId = String.valueOf(member.memberId());
+      members.add(new DefaultRaftMember(MemberId.from(memberId), type, updated));
+    }
+
+    return new ConfigurationEntry(timestamp, members);
   }
 }

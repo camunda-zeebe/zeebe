@@ -46,7 +46,7 @@ public class RaftEntrySBESerializerTest {
 
     // when
     final var length = serializer.writeApplicationEntry(5, entry, buffer, 0);
-    final RaftLogEntry entryRead = serializer.getRaftLogEntry(buffer);
+    final RaftLogEntry entryRead = serializer.readRaftLogEntry(buffer);
 
     assertThat(entryRead.isApplicationEntry()).isTrue();
 
@@ -65,7 +65,7 @@ public class RaftEntrySBESerializerTest {
 
     // when
     final var length = serializer.writeInitialEntry(5, entry, buffer, 0);
-    final RaftLogEntry entryRead = serializer.getRaftLogEntry(buffer);
+    final RaftLogEntry entryRead = serializer.readRaftLogEntry(buffer);
 
     assertThat(entryRead.isInitialEntry()).isTrue();
     assertThat(raftLogEntry).isEqualTo(entryRead);
@@ -86,7 +86,7 @@ public class RaftEntrySBESerializerTest {
 
     // when
     final var length = serializer.writeConfigurationEntry(5, entry, buffer, 0);
-    final RaftLogEntry entryRead = serializer.getRaftLogEntry(buffer);
+    final RaftLogEntry entryRead = serializer.readRaftLogEntry(buffer);
 
     assertThat(entryRead.isConfigurationEntry()).isTrue();
     final var configEntry = entryRead.getConfigurationEntry();

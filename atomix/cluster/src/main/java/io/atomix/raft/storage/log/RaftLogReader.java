@@ -53,7 +53,7 @@ public class RaftLogReader implements java.util.Iterator<IndexedRaftRecord>, Aut
     }
 
     final JournalRecord journalRecord = journalReader.next();
-    final RaftLogEntry entry = serializer.getRaftLogEntry(journalRecord.data());
+    final RaftLogEntry entry = serializer.readRaftLogEntry(journalRecord.data());
     final IndexedRaftRecord record =
         new IndexedRaftRecord(
             journalRecord.index(),
