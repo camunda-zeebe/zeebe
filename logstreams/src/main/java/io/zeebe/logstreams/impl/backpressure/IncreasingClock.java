@@ -16,8 +16,8 @@ public class IncreasingClock implements Supplier<Long> {
   @Override
   public synchronized Long get() {
     long time = System.nanoTime();
-    if (lastTime != null && lastTime == time) {
-      time++;
+    if (lastTime != null && time <= lastTime) {
+      time = lastTime + 1;
     }
 
     lastTime = time;

@@ -51,7 +51,12 @@ public final class AppendEntryLimiter extends AbstractLimiter<Long> implements A
   public void onCommit(final long position) {
     final Listener listener = appendedListeners.remove(position);
     if (listener != null) {
-      listener.onSuccess();
+      try {
+        listener.onSuccess();
+      } catch (final IllegalArgumentException e) {
+        listener.onIgnore();
+        Loggers.LOGSTREAMS_LOGGER.trace("Ignoring request.");
+      }
       metrics.decInflight();
     } else {
       Loggers.LOGSTREAMS_LOGGER.warn(
