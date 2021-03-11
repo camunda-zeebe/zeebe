@@ -24,9 +24,10 @@ public final class ChecksumGenerator {
 
   /** Compute checksum of given ByteBuffer */
   public long compute(final ByteBuffer buffer, final int offset, final int length) {
-    final var slice = buffer.asReadOnlyBuffer().position(offset).slice();
+    final var slice = buffer.position(offset).slice();
+    slice.limit(length);
     crc32.reset();
-    crc32.update(slice.limit(length));
+    crc32.update(slice);
     return crc32.getValue();
   }
 }

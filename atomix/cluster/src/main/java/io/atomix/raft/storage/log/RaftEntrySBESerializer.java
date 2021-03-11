@@ -170,8 +170,7 @@ public class RaftEntrySBESerializer implements RaftEntrySerializer {
     final long timestamp = configurationEntryDecoder.timestamp();
 
     final RaftMemberDecoder memberDecoder1 = configurationEntryDecoder.raftMember();
-    final ArrayList<RaftMember> members =
-        new ArrayList<>(memberDecoder1.count());
+    final ArrayList<RaftMember> members = new ArrayList<>(memberDecoder1.count());
     for (final RaftMemberDecoder memberDecoder : memberDecoder1) {
       final RaftMember.Type type = getRaftMemberType(memberDecoder.type());
       final Instant updated = Instant.ofEpochMilli(memberDecoder.updated());
@@ -243,8 +242,6 @@ public class RaftEntrySBESerializer implements RaftEntrySerializer {
     return new ApplicationEntry(
         applicationEntryDecoder.lowestAsqn(), applicationEntryDecoder.highestAsqn(), data);
   }
-
-
 
   private RaftMember.Type getRaftMemberType(final Type type) {
     switch (type) {

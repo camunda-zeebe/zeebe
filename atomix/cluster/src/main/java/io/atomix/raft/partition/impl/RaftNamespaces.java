@@ -46,6 +46,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedList;
+import org.agrona.concurrent.UnsafeBuffer;
 
 /** Storage serializer namespaces. */
 public final class RaftNamespaces {
@@ -82,6 +83,8 @@ public final class RaftNamespaces {
           .register(Instant.class)
           .register(Configuration.class)
           .register(ApplicationEntry.class)
+          .register(RaftLogEntry.class)
+          .register(UnsafeBuffer.class)
           .name("RaftProtocol")
           .build();
 

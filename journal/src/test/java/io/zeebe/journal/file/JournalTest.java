@@ -314,6 +314,28 @@ class JournalTest {
   }
 
   @Test
+  void shouldCalculateSameChecksum() {
+    // given
+    final var receiverJournal =
+        SegmentedJournal.builder()
+            .withDirectory(directory.resolve("data-2").toFile())
+            .withJournalIndexDensity(5)
+            .build();
+    journal.append(1, new UnsafeBuffer("testData1234567".getBytes()));
+    final var expected = journal.append(10, data);
+
+    // when
+    receiverJournal.reset(2);
+    receiverJournal.append(expected);
+
+    // then
+    final var reader = receiverJournal.openReader();
+    assertThat(reader.hasNext()).isTrue();
+    final var actual = reader.next();
+    assertThat(expected).isEqualTo(actual);
+  }
+
+  @Test
   void shouldNotAppendRecordWithAlreadyAppendedIndex() {
     // given
     final var record = journal.append(1, data);

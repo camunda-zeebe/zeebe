@@ -33,6 +33,7 @@ import org.agrona.DirectBuffer;
 import org.agrona.IoUtil;
 import org.agrona.MutableDirectBuffer;
 import org.agrona.concurrent.UnsafeBuffer;
+import org.slf4j.LoggerFactory;
 
 /** Segment writer. */
 class MappedJournalSegmentWriter {
@@ -114,6 +115,11 @@ class MappedJournalSegmentWriter {
 
     updateLastWrittenEntry(metadata, indexedRecord, startPosition);
 
+    if (asqn == 1398) {
+      LoggerFactory.getLogger("YOLO")
+          .info(
+              "{} {} {} {} {}", startPosition, recordLength, checksum, data.capacity(), lastEntry);
+    }
     buffer.position(startPosition + metadataLength + recordLength);
     return lastEntry;
   }

@@ -79,7 +79,8 @@ public class RaftEntrySBESerializerTest {
         Set.of(
             new DefaultRaftMember(MemberId.from("1"), Type.ACTIVE, Instant.ofEpochMilli(123456L)),
             new DefaultRaftMember(MemberId.from("2"), Type.PASSIVE, Instant.ofEpochMilli(123457L)),
-            new DefaultRaftMember(MemberId.from("3"), Type.PROMOTABLE, Instant.ofEpochMilli(123458L)));
+            new DefaultRaftMember(
+                MemberId.from("3"), Type.PROMOTABLE, Instant.ofEpochMilli(123458L)));
     final ConfigurationEntry entry = new ConfigurationEntry(1234L, members);
     final RaftLogEntry raftLogEntry = new RaftLogEntry(5, entry);
 

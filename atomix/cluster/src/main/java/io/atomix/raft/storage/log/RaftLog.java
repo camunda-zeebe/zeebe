@@ -44,7 +44,7 @@ public class RaftLog implements Closeable {
   private IndexedRaftRecord lastAppendedEntry;
   private volatile long commitIndex;
 
-  private final MutableDirectBuffer writeBuffer = new ExpandableArrayBuffer();
+  private final MutableDirectBuffer writeBuffer = new ExpandableArrayBuffer(4 * 1024);
 
   protected RaftLog(
       final Journal journal, final Namespace serializer, final boolean flushExplicitly) {
@@ -144,19 +144,27 @@ public class RaftLog implements Closeable {
       final ApplicationEntry asqnEntry = entry.getApplicationEntry();
       final int serializedLength =
           serializer.writeApplicationEntry(entry.term(), asqnEntry, writeBuffer, 0);
-      journalRecord =
-          journal.append(
-              asqnEntry.lowestPosition(), new UnsafeBuffer(writeBuffer, 0, serializedLength));
+
+      // TODO: Temporary, until kryo is replaced from the journal
+      final byte[] bytes = new byte[serializedLength];
+      writeBuffer.getBytes(0, bytes);
+      journalRecord = journal.append(asqnEntry.lowestPosition(), new UnsafeBuffer(bytes));
     } else if (entry.isInitialEntry()) {
       final InitializeEntry initialEntry = entry.getInitialEntry();
       final int serializedLength =
           serializer.writeInitialEntry(entry.term(), initialEntry, writeBuffer, 0);
-      journalRecord = journal.append(new UnsafeBuffer(writeBuffer, 0, serializedLength));
+      // TODO: Temporary, until kryo is replaced from the journal
+      final byte[] bytes = new byte[serializedLength];
+      writeBuffer.getBytes(0, bytes);
+      journalRecord = journal.append(new UnsafeBuffer(bytes));
     } else if (entry.isConfigurationEntry()) {
       final ConfigurationEntry configurationEntry = entry.getConfigurationEntry();
       final int serializedLength =
           serializer.writeConfigurationEntry(entry.term(), configurationEntry, writeBuffer, 0);
-      journalRecord = journal.append(new UnsafeBuffer(writeBuffer, 0, serializedLength));
+      // TODO: Temporary, until kryo is replaced from the journal
+      final byte[] bytes = new byte[serializedLength];
+      writeBuffer.getBytes(0, bytes);
+      journalRecord = journal.append(new UnsafeBuffer(bytes));
     } else {
       // TODO
       throw new IllegalArgumentException();
