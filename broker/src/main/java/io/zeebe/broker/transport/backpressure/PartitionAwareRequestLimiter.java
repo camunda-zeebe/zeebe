@@ -23,6 +23,7 @@ import io.zeebe.broker.system.configuration.backpressure.FixedCfg;
 import io.zeebe.broker.system.configuration.backpressure.Gradient2Cfg;
 import io.zeebe.broker.system.configuration.backpressure.GradientCfg;
 import io.zeebe.broker.system.configuration.backpressure.VegasCfg;
+import io.zeebe.logstreams.impl.backpressure.IncreasingClock;
 import io.zeebe.protocol.record.intent.Intent;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -42,7 +43,12 @@ public final class PartitionAwareRequestLimiter {
   }
 
   private PartitionAwareRequestLimiter(final Supplier<Limit> limitSupplier) {
-    limiterSupplier = i -> CommandRateLimiter.builder().limit(limitSupplier.get()).build(i);
+    limiterSupplier =
+        i ->
+            CommandRateLimiter.builder()
+                .clock(new IncreasingClock())
+                .limit(limitSupplier.get())
+                .build(i);
   }
 
   public static PartitionAwareRequestLimiter newNoopLimiter() {

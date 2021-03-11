@@ -17,10 +17,14 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public final class CommandRateLimiter extends AbstractLimiter<Intent>
     implements RequestLimiter<Intent> {
 
+  private static final Logger LOG =
+      LoggerFactory.getLogger("io.zeebe.broker.transport.backpressure");
   private static final Set<? extends Intent> WHITE_LISTED_COMMANDS =
       EnumSet.of(JobIntent.COMPLETE, JobIntent.FAIL);
   private final Map<ListenerId, Listener> responseListeners = new ConcurrentHashMap<>();
@@ -65,7 +69,13 @@ public final class CommandRateLimiter extends AbstractLimiter<Intent>
   public void onResponse(final int streamId, final long requestId) {
     final Listener listener = responseListeners.remove(new ListenerId(streamId, requestId));
     if (listener != null) {
-      listener.onSuccess();
+      try {
+        listener.onSuccess();
+      } catch (final IllegalArgumentException e) {
+        listener.onIgnore();
+        LOG.trace("Ignoring request.");
+      }
+
       metrics.decInflight(partitionId);
     } else {
       // Ignore this message, if it happens immediately after failover. It can happen when a request
