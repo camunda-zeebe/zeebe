@@ -84,14 +84,23 @@ public final class SubProcessProcessor
   }
 
   @Override
-  public void onTerminating(
+  public void onTerminate(
       final ExecutableFlowElementContainer element, final BpmnElementContext context) {
 
     eventSubscriptionBehavior.unsubscribeFromEvents(context);
 
     final var noActiveChildInstances = stateTransitionBehavior.terminateChildInstances(context);
     if (noActiveChildInstances) {
-      stateTransitionBehavior.transitionToTerminated(context);
+      final var terminated = stateTransitionBehavior.transitionToTerminated(context);
+
+      eventSubscriptionBehavior.publishTriggeredBoundaryEvent(terminated);
+
+      incidentBehavior.resolveIncidents(terminated);
+
+      stateTransitionBehavior.onElementTerminated(element, terminated);
+
+      stateBehavior.consumeToken(terminated);
+      stateBehavior.removeElementInstance(terminated);
     }
   }
 

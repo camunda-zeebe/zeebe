@@ -258,7 +258,8 @@ public final class BpmnStateTransitionBehavior {
               childInstanceContext.getRecordValue());
         }
 
-      } else if (childInstanceContext.getIntent() == ProcessInstanceIntent.ELEMENT_COMPLETED) {
+      } else if (childInstanceContext.getIntent() == ProcessInstanceIntent.ELEMENT_COMPLETED
+          && !MigratedStreamProcessors.isMigrated(childInstanceContext.getBpmnElementType())) {
         // clean up the state because the completed event will not be processed
         stateBehavior.removeElementInstance(childInstanceContext);
       }
@@ -267,7 +268,8 @@ public final class BpmnStateTransitionBehavior {
     final var elementInstance = stateBehavior.getElementInstance(context);
     final var activeChildInstances = elementInstance.getNumberOfActiveElementInstances();
 
-    if (activeChildInstances > 0) {
+    if (!MigratedStreamProcessors.isMigrated(context.getBpmnElementType())
+        && activeChildInstances > 0) {
       // wait for child instances to be terminated
 
       // clean up the state because some events of child instances will not be processed (e.g.
