@@ -152,7 +152,12 @@ public final class ProcessEventProcessors {
         .onCommand(
             ValueType.TIMER,
             TimerIntent.TRIGGER,
-            new TriggerTimerProcessor(zeebeState, catchEventOutput, expressionProcessor))
+            new TriggerTimerProcessor(
+                zeebeState,
+                catchEventOutput,
+                expressionProcessor,
+                writers.state(),
+                writers.rejection()))
         .onCommand(
             ValueType.TIMER,
             TimerIntent.CANCEL,

@@ -24,11 +24,6 @@ class TimerCancelledApplier implements TypedEventApplier<TimerIntent, TimerRecor
   @Override
   public void applyState(final long key, final TimerRecord value) {
     final TimerInstance timerInstance = timerInstanceState.get(value.getElementInstanceKey(), key);
-
-    // if (timerInstance != null) {
     timerInstanceState.remove(timerInstance);
-    // } else {
-    //  System.out.println("klongh");
-    // }
   }
 }
