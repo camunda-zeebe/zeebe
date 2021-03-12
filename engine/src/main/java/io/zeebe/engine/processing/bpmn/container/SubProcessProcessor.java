@@ -98,24 +98,7 @@ public final class SubProcessProcessor
       incidentBehavior.resolveIncidents(terminated);
 
       stateTransitionBehavior.onElementTerminated(element, terminated);
-
-      stateBehavior.consumeToken(terminated);
-      stateBehavior.removeElementInstance(terminated);
     }
-  }
-
-  @Override
-  public void onTerminated(
-      final ExecutableFlowElementContainer element, final BpmnElementContext context) {
-
-    eventSubscriptionBehavior.publishTriggeredBoundaryEvent(context);
-
-    incidentBehavior.resolveIncidents(context);
-
-    stateTransitionBehavior.onElementTerminated(element, context);
-
-    stateBehavior.consumeToken(context);
-    stateBehavior.removeElementInstance(context);
   }
 
   @Override
