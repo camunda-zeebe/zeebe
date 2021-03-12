@@ -16,14 +16,13 @@
 package io.zeebe.protocol.record.intent;
 
 public enum TimerIntent implements ProcessInstanceRelatedIntent {
-  CREATE((short) 0),
-  CREATED((short) 1),
+  CREATED((short) 0),
 
-  TRIGGER((short) 2),
-  TRIGGERED((short) 3),
+  TRIGGER((short) 1),
+  TRIGGERED((short) 2),
 
-  CANCEL((short) 4),
-  CANCELED((short) 5);
+  CANCEL((short) 3),
+  CANCELED((short) 4);
 
   private final short value;
   private final boolean shouldBlacklist;
@@ -45,16 +44,14 @@ public enum TimerIntent implements ProcessInstanceRelatedIntent {
   public static Intent from(final short value) {
     switch (value) {
       case 0:
-        return CREATE;
-      case 1:
         return CREATED;
-      case 2:
+      case 1:
         return TRIGGER;
-      case 3:
+      case 2:
         return TRIGGERED;
-      case 4:
+      case 3:
         return CANCEL;
-      case 5:
+      case 4:
         return CANCELED;
       default:
         return Intent.UNKNOWN;
