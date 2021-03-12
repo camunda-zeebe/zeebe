@@ -36,7 +36,7 @@ public class DueDateTimerChecker implements StreamProcessorLifecycleAware {
     this.timerInstanceState = timerInstanceState;
   }
 
-  public void scheduleTimer(final TimerInstance timer) {
+  public void scheduleTimer(final long dueDate) {
 
     // We schedule only one runnable for all timers.
     // - The runnable is scheduled when the first timer is scheduled.
@@ -45,18 +45,17 @@ public class DueDateTimerChecker implements StreamProcessorLifecycleAware {
     // - Otherwise, we don't need to cancel the runnable. It will be rescheduled when it is
     // executed.
 
-    final Duration duration =
-        Duration.ofMillis(timer.getDueDate() - ActorClock.currentTimeMillis());
+    final Duration duration = Duration.ofMillis(dueDate - ActorClock.currentTimeMillis());
 
     if (scheduledTimer == null) {
       scheduledTimer = actor.runDelayed(duration, this::triggerTimers);
-      nextDueDate = timer.getDueDate();
+      nextDueDate = dueDate;
 
-    } else if (nextDueDate - timer.getDueDate() > TIMER_RESOLUTION) {
+    } else if (nextDueDate - dueDate > TIMER_RESOLUTION) {
       scheduledTimer.cancel();
 
       scheduledTimer = actor.runDelayed(duration, this::triggerTimers);
-      nextDueDate = timer.getDueDate();
+      nextDueDate = dueDate;
     }
   }
 

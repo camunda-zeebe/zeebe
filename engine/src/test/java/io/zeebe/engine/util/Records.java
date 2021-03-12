@@ -166,7 +166,7 @@ public final class Records {
     return event;
   }
 
-  public static TimerRecord timer(final int instanceKey) {
+  public static TimerRecord timer(final long instanceKey) {
     final TimerRecord event = new TimerRecord();
     event
         .setProcessInstanceKey(instanceKey)

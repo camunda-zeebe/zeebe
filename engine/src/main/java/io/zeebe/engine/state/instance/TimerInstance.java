@@ -17,7 +17,7 @@ import org.agrona.concurrent.UnsafeBuffer;
 
 public final class TimerInstance extends UnpackedObject implements DbValue {
 
-  public static final int NO_ELEMENT_INSTANCE = -1;
+  public static final long NO_ELEMENT_INSTANCE = -1L;
 
   private final StringProperty handlerNodeIdProp = new StringProperty("handlerNodeId", "");
   private final LongProperty processDefinitionKeyProp =

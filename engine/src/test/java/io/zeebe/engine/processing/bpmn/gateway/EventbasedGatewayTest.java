@@ -262,7 +262,7 @@ public final class EventbasedGatewayTest {
 
     // then
     final List<String> timers =
-        RecordingExporter.timerRecords(TimerIntent.CREATE)
+        RecordingExporter.timerRecords(TimerIntent.CREATED)
             .withProcessInstanceKey(processInstanceKey)
             .limit(2)
             .map(r -> r.getValue().getTargetElementId())

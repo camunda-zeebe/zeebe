@@ -144,7 +144,6 @@ public final class BlacklistInstanceTest {
       ////////////////////////////////////////
       //////////////// TIMERS ////////////////
       ////////////////////////////////////////
-      {ValueType.TIMER, TimerIntent.CREATE, true},
       {ValueType.TIMER, TimerIntent.CREATED, true},
       {ValueType.TIMER, TimerIntent.TRIGGER, true},
       {ValueType.TIMER, TimerIntent.TRIGGERED, true},

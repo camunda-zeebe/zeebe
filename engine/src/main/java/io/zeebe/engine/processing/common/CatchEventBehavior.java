@@ -20,8 +20,13 @@ import io.zeebe.engine.processing.message.MessageCorrelationKeyException;
 import io.zeebe.engine.processing.message.MessageNameException;
 import io.zeebe.engine.processing.message.command.SubscriptionCommandSender;
 import io.zeebe.engine.processing.streamprocessor.MigratedStreamProcessors;
+import io.zeebe.engine.processing.streamprocessor.sideeffect.SideEffectProducer;
 import io.zeebe.engine.processing.streamprocessor.sideeffect.SideEffects;
+import io.zeebe.engine.processing.streamprocessor.writers.StateWriter;
 import io.zeebe.engine.processing.streamprocessor.writers.TypedCommandWriter;
+import io.zeebe.engine.processing.streamprocessor.writers.Writers;
+import io.zeebe.engine.processing.timer.DueDateTimerChecker;
+import io.zeebe.engine.state.KeyGenerator;
 import io.zeebe.engine.state.ZeebeState;
 import io.zeebe.engine.state.immutable.TimerInstanceState;
 import io.zeebe.engine.state.instance.TimerInstance;
@@ -39,6 +44,7 @@ import io.zeebe.util.sched.clock.ActorClock;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Consumer;
 import org.agrona.DirectBuffer;
 
 public final class CatchEventBehavior {
@@ -46,10 +52,13 @@ public final class CatchEventBehavior {
   private final ExpressionProcessor expressionProcessor;
   private final SubscriptionCommandSender subscriptionCommandSender;
   private final int partitionsCount;
+  private final StateWriter stateWriter;
+  private final DueDateTimerChecker dueDateTimerChecker;
 
   private final MutableEventScopeInstanceState eventScopeInstanceState;
   private final MutableProcessInstanceSubscriptionState processInstanceSubscriptionState;
   private final TimerInstanceState timerInstanceState;
+  private final KeyGenerator keyGenerator;
 
   private final ProcessInstanceSubscription subscription = new ProcessInstanceSubscription();
   private final TimerRecord timerRecord = new TimerRecord();
@@ -60,14 +69,20 @@ public final class CatchEventBehavior {
       final ZeebeState zeebeState,
       final ExpressionProcessor expressionProcessor,
       final SubscriptionCommandSender subscriptionCommandSender,
-      final int partitionsCount) {
+      final int partitionsCount,
+      // TODO: narrow down to usage only
+      final Writers writers,
+      final DueDateTimerChecker dueDateTimerChecker) {
     this.expressionProcessor = expressionProcessor;
     this.subscriptionCommandSender = subscriptionCommandSender;
     this.partitionsCount = partitionsCount;
+    this.dueDateTimerChecker = dueDateTimerChecker;
 
     eventScopeInstanceState = zeebeState.getEventScopeInstanceState();
     timerInstanceState = zeebeState.getTimerState();
     processInstanceSubscriptionState = zeebeState.getProcessInstanceSubscriptionState();
+    keyGenerator = zeebeState.getKeyGenerator();
+    stateWriter = writers.state();
   }
 
   public void unsubscribeFromEvents(
@@ -87,7 +102,6 @@ public final class CatchEventBehavior {
   public void subscribeToEvents(
       final BpmnElementContext context,
       final ExecutableCatchEventSupplier supplier,
-      final TypedCommandWriter commandWriter,
       final SideEffects sideEffects)
       throws MessageCorrelationKeyException {
 
@@ -113,7 +127,7 @@ public final class CatchEventBehavior {
             context.getProcessDefinitionKey(),
             event.getId(),
             evaluatedTimers.get(event.getId()),
-            commandWriter);
+            sideEffects::add);
       } else if (event.isMessage()) {
         subscribeToMessageEvent(
             context,
@@ -137,16 +151,24 @@ public final class CatchEventBehavior {
       final long processDefinitionKey,
       final DirectBuffer handlerNodeId,
       final Timer timer,
-      final TypedCommandWriter commandWriter) {
+      final Consumer<SideEffectProducer> sideEffects) {
+    final long dueDate = timer.getDueDate(ActorClock.currentTimeMillis());
     timerRecord.reset();
     timerRecord
         .setRepetitions(timer.getRepetitions())
-        .setDueDate(timer.getDueDate(ActorClock.currentTimeMillis()))
+        .setDueDate(dueDate)
         .setElementInstanceKey(elementInstanceKey)
         .setProcessInstanceKey(processInstanceKey)
         .setTargetElementId(handlerNodeId)
         .setProcessDefinitionKey(processDefinitionKey);
-    commandWriter.appendNewCommand(TimerIntent.CREATE, timerRecord);
+
+    final long timerKey = keyGenerator.nextKey();
+    sideEffects.accept(
+        () -> {
+          dueDateTimerChecker.scheduleTimer(dueDate);
+          return true;
+        });
+    stateWriter.appendFollowUpEvent(timerKey, TimerIntent.CREATED, timerRecord);
   }
 
   private void unsubscribeFromTimerEvents(

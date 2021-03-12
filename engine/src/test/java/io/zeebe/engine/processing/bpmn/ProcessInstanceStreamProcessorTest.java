@@ -438,7 +438,6 @@ public final class ProcessInstanceStreamProcessorTest {
     assertThat(envRule.events().onlyTimerRecords().collect(Collectors.toList()))
         .extracting(r -> tuple(r.getRecordType(), r.getIntent()))
         .containsSubsequence(
-            tuple(RecordType.COMMAND, TimerIntent.CREATE),
             tuple(RecordType.EVENT, TimerIntent.CREATED),
             tuple(RecordType.COMMAND, TimerIntent.TRIGGER),
             tuple(RecordType.COMMAND_REJECTION, TimerIntent.TRIGGER));

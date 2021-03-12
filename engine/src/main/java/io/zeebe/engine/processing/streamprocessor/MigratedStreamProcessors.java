@@ -14,6 +14,7 @@ import io.zeebe.protocol.record.intent.Intent;
 import io.zeebe.protocol.record.intent.JobIntent;
 import io.zeebe.protocol.record.intent.MessageStartEventSubscriptionIntent;
 import io.zeebe.protocol.record.intent.ProcessInstanceSubscriptionIntent;
+import io.zeebe.protocol.record.intent.TimerIntent;
 import io.zeebe.protocol.record.value.BpmnElementType;
 import java.util.ArrayList;
 import java.util.EnumMap;
@@ -89,6 +90,9 @@ public final class MigratedStreamProcessors {
         ValueType.INCIDENT,
         MIGRATED_INTENT_FILTER_FACTORY.apply(
             List.of(IncidentIntent.CREATE, IncidentIntent.CREATED)));
+
+    MIGRATED_VALUE_TYPES.put(
+        ValueType.TIMER, MIGRATED_INTENT_FILTER_FACTORY.apply(List.of(TimerIntent.CREATED)));
   }
 
   private MigratedStreamProcessors() {}

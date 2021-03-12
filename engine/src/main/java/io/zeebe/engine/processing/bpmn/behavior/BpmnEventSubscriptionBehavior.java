@@ -94,7 +94,7 @@ public final class BpmnEventSubscriptionBehavior {
       final T element, final BpmnElementContext context) {
 
     try {
-      catchEventBehavior.subscribeToEvents(context, element, commandWriter, sideEffects);
+      catchEventBehavior.subscribeToEvents(context, element, sideEffects);
       return Either.right(null);
 
     } catch (final MessageCorrelationKeyException e) {

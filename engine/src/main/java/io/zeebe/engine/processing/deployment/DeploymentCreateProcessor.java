@@ -89,7 +89,7 @@ public final class DeploymentCreateProcessor implements TypedRecordProcessor<Dep
       final long key = keyGenerator.nextKey();
 
       try {
-        createTimerIfTimerStartEvent(command, streamWriter);
+        createTimerIfTimerStartEvent(command, streamWriter, sideEffect);
       } catch (final RuntimeException e) {
         final String reason = String.format(COULD_NOT_CREATE_TIMER_MESSAGE, e.getMessage());
         responseWriter.writeRejectionOnCommand(command, RejectionType.PROCESSING_ERROR, reason);
@@ -117,7 +117,9 @@ public final class DeploymentCreateProcessor implements TypedRecordProcessor<Dep
   }
 
   private void createTimerIfTimerStartEvent(
-      final TypedRecord<DeploymentRecord> record, final TypedStreamWriter streamWriter) {
+      final TypedRecord<DeploymentRecord> record,
+      final TypedStreamWriter streamWriter,
+      Consumer<SideEffectProducer> sideEffects) {
     for (final ProcessRecord processRecord : record.getValue().processes()) {
       final List<ExecutableStartEvent> startEvents =
           processState.getProcessByKey(processRecord.getKey()).getProcess().getStartEvents();
@@ -142,7 +144,7 @@ public final class DeploymentCreateProcessor implements TypedRecordProcessor<Dep
               processRecord.getKey(),
               startEvent.getId(),
               timerOrError.get(),
-              streamWriter);
+              sideEffects);
         }
       }
     }

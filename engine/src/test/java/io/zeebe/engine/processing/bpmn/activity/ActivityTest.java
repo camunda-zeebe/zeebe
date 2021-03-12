@@ -141,7 +141,7 @@ public final class ActivityTest {
     assertThat(records).hasSize(4);
     assertThat(records)
         .extracting(Record::getIntent)
-        .contains(ELEMENT_ACTIVATING, TimerIntent.CREATE, TimerIntent.CREATE, ELEMENT_ACTIVATED);
+        .contains(ELEMENT_ACTIVATING, TimerIntent.CREATED, TimerIntent.CREATED, ELEMENT_ACTIVATED);
   }
 
   @Test
