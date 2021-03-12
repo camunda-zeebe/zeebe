@@ -86,6 +86,7 @@ public final class EventAppliers implements EventApplier {
     registerIncidentEventAppliers(state);
 
     register(TimerIntent.CREATED, new TimerCreatedApplier(state.getTimerState()));
+    register(TimerIntent.CANCELED, new TimerCancelledApplier(state.getTimerState()));
   }
 
   private void registerVariableEventAppliers(final ZeebeState state) {

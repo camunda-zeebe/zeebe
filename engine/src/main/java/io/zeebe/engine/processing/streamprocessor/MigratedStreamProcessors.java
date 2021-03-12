@@ -92,7 +92,9 @@ public final class MigratedStreamProcessors {
             List.of(IncidentIntent.CREATE, IncidentIntent.CREATED)));
 
     MIGRATED_VALUE_TYPES.put(
-        ValueType.TIMER, MIGRATED_INTENT_FILTER_FACTORY.apply(List.of(TimerIntent.CREATED)));
+        ValueType.TIMER,
+        MIGRATED_INTENT_FILTER_FACTORY.apply(
+            List.of(TimerIntent.CREATED, TimerIntent.CANCEL, TimerIntent.CANCELED)));
   }
 
   private MigratedStreamProcessors() {}

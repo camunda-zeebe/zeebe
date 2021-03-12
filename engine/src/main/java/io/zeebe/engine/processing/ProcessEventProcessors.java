@@ -66,7 +66,12 @@ public final class ProcessEventProcessors {
     addMessageStreamProcessors(
         typedRecordProcessors, subscriptionState, subscriptionCommandSender, zeebeState, writers);
     addTimerStreamProcessors(
-        typedRecordProcessors, timerChecker, zeebeState, catchEventBehavior, expressionProcessor);
+        typedRecordProcessors,
+        timerChecker,
+        zeebeState,
+        catchEventBehavior,
+        expressionProcessor,
+        writers);
     addVariableDocumentStreamProcessors(
         typedRecordProcessors,
         variableBehavior,
@@ -140,7 +145,8 @@ public final class ProcessEventProcessors {
       final DueDateTimerChecker timerChecker,
       final ZeebeState zeebeState,
       final CatchEventBehavior catchEventOutput,
-      final ExpressionProcessor expressionProcessor) {
+      final ExpressionProcessor expressionProcessor,
+      final Writers writers) {
 
     typedRecordProcessors
         .onCommand(
@@ -150,7 +156,8 @@ public final class ProcessEventProcessors {
         .onCommand(
             ValueType.TIMER,
             TimerIntent.CANCEL,
-            new CancelTimerProcessor(zeebeState.getTimerState()))
+            new CancelTimerProcessor(
+                zeebeState.getTimerState(), writers.state(), writers.rejection()))
         .withListener(timerChecker);
   }
 
