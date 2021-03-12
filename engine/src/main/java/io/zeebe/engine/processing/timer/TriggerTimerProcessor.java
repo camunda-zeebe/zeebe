@@ -25,7 +25,6 @@ import io.zeebe.engine.state.ZeebeState;
 import io.zeebe.engine.state.immutable.ElementInstanceState;
 import io.zeebe.engine.state.immutable.EventScopeInstanceState;
 import io.zeebe.engine.state.immutable.ProcessState;
-import io.zeebe.engine.state.instance.TimerInstance;
 import io.zeebe.engine.state.mutable.MutableTimerInstanceState;
 import io.zeebe.model.bpmn.util.time.Interval;
 import io.zeebe.model.bpmn.util.time.RepeatingInterval;
@@ -83,69 +82,79 @@ public final class TriggerTimerProcessor implements TypedRecordProcessor<TimerRe
       final TypedResponseWriter responseWriter,
       final TypedStreamWriter streamWriter,
       final Consumer<SideEffectProducer> sideEffects) {
-    final TimerRecord timer = record.getValue();
-    final long elementInstanceKey = timer.getElementInstanceKey();
+    final var timer = record.getValue();
+    final var elementInstanceKey = timer.getElementInstanceKey();
+    final var processDefinitionKey = timer.getProcessDefinitionKey();
 
-    final TimerInstance timerInstance = timerInstanceState.get(elementInstanceKey, record.getKey());
+    final var timerInstance = timerInstanceState.get(elementInstanceKey, record.getKey());
     if (timerInstance == null) {
       rejectionWriter.appendRejection(
           record, RejectionType.NOT_FOUND, String.format(NO_TIMER_FOUND_MESSAGE, record.getKey()));
       return;
     }
 
-    final var processDefinitionKey = timer.getProcessDefinitionKey();
-    final var catchEvent =
-        processState.getFlowElement(
-            processDefinitionKey, timer.getTargetElementIdBuffer(), ExecutableCatchEvent.class);
-    boolean isTriggered = false;
-    long eventOccurredKey = -1;
-    eventOccurredRecord.reset();
-
-    if (elementInstanceKey > 0) {
-      final var elementInstance = elementInstanceState.getInstance(elementInstanceKey);
-      if (elementInstance != null
-          && elementInstance.isActive()
-          && eventScopeInstanceState.isAcceptingEvent(elementInstanceKey)) {
-        isTriggered = true;
-
-        eventOccurredRecord.wrap(elementInstance.getValue());
-        if (isEventSubprocess(catchEvent)) {
-          eventOccurredKey = keyGenerator.nextKey();
-          eventOccurredRecord
-              .setElementId(catchEvent.getId())
-              .setBpmnElementType(BpmnElementType.START_EVENT)
-              .setFlowScopeKey(elementInstance.getKey());
-        } else {
-          eventOccurredKey = elementInstanceKey;
-        }
-      }
-    } else {
-      isTriggered = eventScopeInstanceState.isAcceptingEvent(processDefinitionKey);
-      if (isTriggered) {
-        final var processInstanceKey = keyGenerator.nextKey();
-        eventOccurredKey = keyGenerator.nextKey();
-        eventOccurredRecord
-            .setBpmnElementType(BpmnElementType.START_EVENT)
-            .setProcessDefinitionKey(processDefinitionKey)
-            .setProcessInstanceKey(processInstanceKey)
-            .setElementId(timer.getTargetElementIdBuffer());
-      }
-    }
-
-    if (isTriggered) {
-      stateWriter.appendFollowUpEvent(record.getKey(), TimerIntent.TRIGGERED, timer);
-      stateWriter.appendFollowUpEvent(
-          eventOccurredKey, ProcessInstanceIntent.EVENT_OCCURRED, eventOccurredRecord);
-
-      if (shouldReschedule(timer)) {
-        rescheduleTimer(timer, catchEvent, sideEffects);
-      }
-    } else {
+    if (!hasActiveTimer(elementInstanceKey, processDefinitionKey)) {
       rejectionWriter.appendRejection(
           record,
           RejectionType.INVALID_STATE,
           String.format(NO_ACTIVE_TIMER_MESSAGE, record.getKey()));
+      return;
     }
+
+    final var catchEvent =
+        processState.getFlowElement(
+            processDefinitionKey, timer.getTargetElementIdBuffer(), ExecutableCatchEvent.class);
+
+    final long eventOccurredKey;
+    eventOccurredRecord.reset();
+    if (isStartEvent(elementInstanceKey)) {
+      final var processInstanceKey = keyGenerator.nextKey();
+      eventOccurredKey = keyGenerator.nextKey();
+      eventOccurredRecord
+          .setBpmnElementType(BpmnElementType.START_EVENT)
+          .setProcessDefinitionKey(processDefinitionKey)
+          .setProcessInstanceKey(processInstanceKey)
+          .setElementId(timer.getTargetElementIdBuffer());
+    } else {
+      final var elementInstance = elementInstanceState.getInstance(elementInstanceKey);
+
+      eventOccurredRecord.wrap(elementInstance.getValue());
+      if (isEventSubprocess(catchEvent)) {
+        eventOccurredKey = keyGenerator.nextKey();
+        eventOccurredRecord
+            .setElementId(catchEvent.getId())
+            .setBpmnElementType(BpmnElementType.START_EVENT)
+            .setFlowScopeKey(elementInstance.getKey());
+      } else {
+        eventOccurredKey = elementInstanceKey;
+      }
+    }
+
+    stateWriter.appendFollowUpEvent(record.getKey(), TimerIntent.TRIGGERED, timer);
+    stateWriter.appendFollowUpEvent(
+        eventOccurredKey, ProcessInstanceIntent.EVENT_OCCURRED, eventOccurredRecord);
+
+    if (shouldReschedule(timer)) {
+      rescheduleTimer(timer, catchEvent, sideEffects);
+    }
+  }
+
+  private boolean hasActiveTimer(final long elementInstanceKey, final long processDefinitionKey) {
+    final boolean result;
+    if (isStartEvent(elementInstanceKey)) {
+      result = eventScopeInstanceState.isAcceptingEvent(processDefinitionKey);
+    } else {
+      final var elementInstance = elementInstanceState.getInstance(elementInstanceKey);
+      result =
+          (elementInstance != null
+              && elementInstance.isActive()
+              && eventScopeInstanceState.isAcceptingEvent(elementInstanceKey));
+    }
+    return result;
+  }
+
+  private boolean isStartEvent(final long elementInstancekey) {
+    return elementInstancekey < 0;
   }
 
   private boolean shouldReschedule(final TimerRecord timer) {
